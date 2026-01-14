@@ -1,0 +1,13 @@
+# R
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# LaTeX
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
