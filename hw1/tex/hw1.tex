@@ -20,6 +20,9 @@ DESCRIPTION}
 
 Chenghao Wang (only me)
 
+My github repository for this course is
+~\url{https://github.com/CHENGHAO-WANG/767_homework/tree/main}.
+
 \section{Dataset Description}
 
 Childhood Asthma Management Program (CAMP) Dataset (for teaching purposes)
@@ -46,15 +49,49 @@ There are 20 measurement occasions.
 \section{Variables}
 \subsection{Continuous outcome}
 There are a few continuous outcomes in the dataset. The main continuous
-outcome is FEV1 (Forced Expiratory Volume in 1 second).
+outcome is post-bronchodilator FEV1 (postBD FEV1).
 
-The unit of FEV1 is liter (L). 
+The unit of PostBD FEV1 is liter (L). 
 
+To measure PostBD FEV1, spirometry was performed no
+later than 15 minutes after administrating the bronchodilator.
 
 \subsection{Discrete outcome}
-\cite{ponce2023pulmonary}
+Unfortunately, there is no discrete outcome in this dataset.
 
+I will create a binary outcome called PreBD FFB,
+which is 1 if the ratio of pre-bronchodilator FEV1 (preBD FEV1) to
+preBD forced vital capacity (preBD FVC) is $ < 70 \% $, and 0 otherwise.
+An FEV1/FVC ratio $ < 70 \% $ defines an obstructive ventilatory defect \cite{ponce2023pulmonary}.
 
+\subsection{Grouping variable}
+Treatment group (TG). 
+
+There are three three treatments (bud: budesonide,
+ned: nedocromil, plbo: placebo).
+
+\subsection{Other variables}
+\begin{table}[ht]
+\centering
+\begin{tabular}{ll}
+\hline
+Variable & Description \\
+\hline
+$age\_rz$      & Age at randomization (years) \\
+$gender$    & m = male, f = female \\
+$ethnic$    & w = white, b = black, h = hispanic, o = other \\
+$hemog$   & Hemoglobin (g/dL) \\
+$wbc$  & White blood cell count (1000 cells/$\mu$L) \\
+$agehome$ & Age of current home (years) \\
+$anypet$ & Any pets in home (1 = yes, 2 = no) \\
+$woodstove$ & Use a wood stove for heating/cooking (1 = yes, 2 = no) \\
+$dehumid$  & Use a dehumidifier (1 = yes, 2 = no, 3 = unknown) \\
+$parent\_smokes$  & Either parent/partner smokes in home (1 = yes, 2 = no) \\
+$any\_smokes$ & Anyone (including visitors) smokes in home (1 = yes, 2 = no) \\
+\hline
+\end{tabular}
+\caption{Notation used in the model}
+\end{table}
 
 
 \bibliographystyle{plain}
