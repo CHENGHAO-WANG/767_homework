@@ -61,14 +61,14 @@ Unfortunately, there is no discrete outcome in this dataset.
 
 I will create a binary outcome called PreBD FFB,
 which is 1 if the ratio of pre-bronchodilator FEV1 (preBD FEV1) to
-preBD forced vital capacity (preBD FVC) is $ < 70 \% $, and 0 otherwise.
+preBD forced vital capacity (preBD FVC) is $ < 70 \% $, and 0 otherwise (1 = obstruction, 0 = normal).
 An FEV1/FVC ratio $ < 70 \% $ defines an obstructive ventilatory defect \cite{ponce2023pulmonary}.
 
 \subsection{Grouping variable}
 Treatment group (TG). 
 
-There are three three treatments (bud: budesonide,
-ned: nedocromil, plbo: placebo).
+There are three three treatments (A = bud: budesonide,
+B = ned: nedocromil, C = plbo: placebo).
 
 \subsection{Other variables}
 \begin{table}[ht]
@@ -90,8 +90,10 @@ $parent\_smokes$  & Either parent/partner smokes in home (1 = yes, 2 = no) \\
 $any\_smokes$ & Anyone (including visitors) smokes in home (1 = yes, 2 = no) \\
 \hline
 \end{tabular}
-\caption{Notation used in the model}
+\caption{Other variables that may be used as covariates}
 \end{table}
+
+\section{Descriptive Summary}
 
 
 \bibliographystyle{plain}
