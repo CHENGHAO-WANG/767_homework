@@ -1,0 +1,63 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\setlength{\parskip}{0.8em}
+\setlength{\parindent}{0pt}
+\renewcommand{\thesubsection}{\thesection.\alph{subsection}}
+
+
+\title{\Large\bfseries ASSIGNMENT 1: DATASET IDENTIFICATION AND
+DESCRIPTION}
+\author{Chenghao Wang}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Team Members}
+
+Chenghao Wang (only me)
+
+\section{Dataset Description}
+
+Childhood Asthma Management Program (CAMP) Dataset (for teaching purposes)
+(\url{https://biolincc.nhlbi.nih.gov/teaching/})
+
+The CAMP was a clinical trial carried out in children with asthma.
+It was designed to determine the long-term effects of three treatments (budesonide,
+nedocromil, or placebo) on lung functions as measured by
+the Forced Expiratory Volume at 1 second (FEV1) over a
+5-6.5 year period. 
+(\textit{The CAMP based teaching dataset was not prepared to
+reproduce the findings of this study. A number of techniques were employed to
+to completely anonymize the data. The variables were permuted over the set of
+participants. A random sample of approximately 2/3 of the
+1041 participants was selected for inclusion in this teaching dataset.})
+
+There are a total of 695 subjects.
+
+There are 20 measurement occasions.
+(Baseline, 2 months, 4 months, 12 months, 16 months, 24 months, 28 months,
+36 months, 40 months, 44 months, 48 months, 52 months, 56 months, 60 months,
+64 months, 72 months, 84 months, 96 months, 108 months, 120 months.)
+
+\section{Variables}
+\subsection{Continuous outcome}
+There are a few continuous outcomes in the dataset. The main continuous
+outcome is FEV1 (Forced Expiratory Volume in 1 second).
+
+The unit of FEV1 is liter (L). 
+
+
+\subsection{Discrete outcome}
+\cite{ponce2023pulmonary}
+
+
+
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}
