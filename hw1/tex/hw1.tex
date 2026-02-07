@@ -2,6 +2,40 @@
 \usepackage[utf8]{inputenc}
 \usepackage{graphicx}
 \usepackage{hyperref}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{textcomp}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{longtable}
+\usepackage{caption}
+\pgfplotsset{compat=1.18}
+\captionsetup[table]{position=top,justification=raggedright,singlelinecheck=false}
+\captionsetup[longtable]{position=top,justification=raggedright,singlelinecheck=false}
+\setlength\LTleft{0pt}
+\setlength\LTright{0pt}
+\setlength\LTcapwidth{\textwidth}
+\pgfplotstableset{
+  show variable once/.style={
+    columns/variable/.style={
+      string type,
+      column name=Variable,
+      postproc cell content/.code={
+        \pgfkeysgetvalue{/pgfplots/table/@cell content}{\cellcontent}
+        \edef\currentvar{\cellcontent}
+        \ifx\currentvar\lastvar
+          \pgfkeyssetvalue{/pgfplots/table/@cell content}{}
+        \else
+          \ifnum\pgfplotstablerow>0
+            \pgfkeyssetevalue{/pgfplots/table/@cell content}{\noexpand\hline\space\cellcontent}
+          \fi
+          \xdef\lastvar{\currentvar}
+        \fi
+      }
+    }
+  }
+}
+\def\lastvar{}
 \setlength{\parskip}{0.8em}
 \setlength{\parindent}{0pt}
 \renewcommand{\thesubsection}{\thesection.\alph{subsection}}
@@ -73,6 +107,7 @@ B = ned: nedocromil, C = plbo: placebo).
 \subsection{Other variables}
 \begin{table}[ht]
 \centering
+\caption{Other variables that may be used as covariates}
 \begin{tabular}{ll}
 \hline
 Variable & Description \\
@@ -90,10 +125,69 @@ $parent\_smokes$  & Either parent/partner smokes in home (1 = yes, 2 = no) \\
 $any\_smokes$ & Anyone (including visitors) smokes in home (1 = yes, 2 = no) \\
 \hline
 \end{tabular}
-\caption{Other variables that may be used as covariates}
 \end{table}
 
 \section{Descriptive Summary}
+
+\begin{table}[ht]
+\centering
+\caption{Continuous variables summary}
+\label{tab:continuous-summary}
+\pgfplotstabletypeset[
+  col sep=comma,
+  ignore chars={"}, 
+  columns={variable,n_non_missing,mean,Std,median,IQR,pct_missing},
+  columns/variable/.style={string type,column name=Variable,string replace={\mu}{\textmu{}}},
+  columns/n_non_missing/.style={column name=$n$, fixed, precision=0},
+  columns/mean/.style={column name=Mean, fixed, fixed zerofill, precision=2},
+  columns/Std/.style={column name=Std, fixed, fixed zerofill, precision=2},
+  columns/median/.style={column name=Median, fixed, fixed zerofill, precision=2},
+  columns/IQR/.style={column name=IQR, fixed, fixed zerofill, precision=2},
+  columns/pct_missing/.style={column name=\% Missing, fixed, fixed zerofill, precision=2},
+  every head row/.style={before row=\hline, after row=\hline},
+  every last row/.style={after row=\hline}
+]{../../hw1_code/output/continuous_summary.csv}
+\end{table}
+
+\gdef\lastvar{}
+\pgfplotstabletypeset[
+  col sep=comma,
+  ignore chars={"}, 
+  show variable once,
+  begin table=\begin{longtable},
+  end table=\end{longtable},
+  columns={variable,category,n,pct},
+  columns/category/.style={string type,column name=Category},
+  columns/n/.style={column name=$n$, fixed, precision=0},
+  columns/pct/.style={column name=\%, fixed, fixed zerofill, precision=2},
+  every head row/.style={
+    before row=\caption{Discrete variables summary}\label{tab:discrete-summary}\\\hline,
+    after row=\hline\endfirsthead
+      \multicolumn{4}{l}{\tablename\ \thetable\ (continued)}\\\hline
+      Variable & Category & $n$ & \%\\\hline\endhead
+      \hline\endfoot
+      \hline\endlastfoot
+  }
+]{../../hw1_code/output/discrete_summary.csv}
+
+\section{Limitations and Challenges}
+First, some of the variables in the dataset have a large proportion of missing values.
+The tables in Section 4 only report the percentage of missing at the baseline. Actually,
+the missingness is more severe at later time points than at the baseline.
+For example, $hemog$ (Hemoglobin) has
+86.96\% missing values in total, though it has only 1.15\% missing at the baseline.
+This might bring challenges to the statistical analysis of the data.
+
+Second, the dataset has some time-varying covariates, such as $hemog$, $wbc$ and $agehome$.
+These covariates might be affected by previous treatment or outcomes.
+Comparing to time-invariant covariates, such as $age\_rz$ and $gender$,
+the time-varying covariates are more difficult to handle and interpret in the analysis.
+
+Finally, in addition to the measurement occasions mentioned in Section 2,
+which are coarsened time points (unit: month),
+there is another variable that indicates the number of days since randomization
+for each visit. For simplicity, I will primarily use the coarsened time points
+in this course. However, this might lead to some loss of information and potential bias.
 
 
 \bibliographystyle{plain}
