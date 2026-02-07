@@ -52,9 +52,9 @@ data.tidy <- data.tidy %>%
       .default = as.character(PreBD_FFB)
     ),
     TG = recode(as.character(TG),
-      "A" = "bud",
-      "B" = "ned",
-      "C" = "plbo",
+      "A" = "budesonide",
+      "B" = "nedocromil",
+      "C" = "placebo",
       .default = as.character(TG)
     ),
     gender = recode(as.character(gender),
@@ -122,7 +122,8 @@ summarize_continuous <- function(df, vars) {
       names_to = c("variable", "stat"),
       names_sep = "__"
     ) %>%
-    pivot_wider(names_from = stat, values_from = value)
+    pivot_wider(names_from = stat, values_from = value) %>%
+    mutate(across(where(is.numeric), ~round(., 2)))
 }
 
 summarize_discrete <- function(df, vars) {
@@ -148,12 +149,47 @@ summarize_discrete <- function(df, vars) {
       pct = as.numeric(tab) / n_total * 100
     )
   })
-  bind_rows(out)
+  bind_rows(out) %>%
+    mutate(across(where(is.numeric), ~round(., 2)))
 }
 
 continuous.summary <- summarize_continuous(data.baseline, continuous.variables)
 discrete.summary <- summarize_discrete(data.baseline, discrete.variables)
 
+continuous.labels <- c(
+  age_rz = "Age at randomization (years)",
+  hemog = "Hemoglobin (g/dL)",
+  wbc = "White blood cell count (1000 cells/\\textmu{} L)",
+  agehome = "Age of current home (years)",
+  PostBD_FEV = "PostBD FEV1 (L)"
+)
+
+discrete.labels <- c(
+  TG = "Treatment group",
+  gender = "Gender",
+  ethnic = "Ethnicity",
+  anypet = "Any pets in home",
+  woodstove = "Use a wood stove for heating/cooking",
+  dehumid = "Use a dehumidifier",
+  parent_smokes = "Either parent/partner smokes in home",
+  any_smokes = "Anyone smokes in home",
+  PreBD_FFB = "PreBD FFB (obstruction if PreBD FEV1/FVC ratio \\textless{} 70\\%)"
+)
+
+continuous.summary <- continuous.summary %>%
+  mutate(variable = recode(variable, !!!continuous.labels, .default = variable))
+
+discrete.summary <- discrete.summary %>%
+  mutate(variable = recode(variable, !!!discrete.labels, .default = variable))
+
 write.csv(continuous.summary, "./output/continuous_summary.csv", row.names = FALSE)
 write.csv(discrete.summary, "./output/discrete_summary.csv", row.names = FALSE)
 
+# save data.tidy for future use
+write.csv(data.tidy, "../data/data_tidy.csv", row.names = FALSE)
+
+# Q5: Limitations and Challenges
+
+# missingess example
+sum(is.na(data.tidy$hemog))/nrow(data.tidy) * 100
+# [1] 86.96089
