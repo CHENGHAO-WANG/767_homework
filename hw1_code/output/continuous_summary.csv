@@ -1,0 +1,6 @@
+"variable","n_non_missing","mean","Std","median","IQR","pct_missing"
+"Age at randomization (years)",695,8.38,2.16,8,3,0
+"Hemoglobin (g/dL)",687,13.12,1.16,13.1,1.25,1.15
+"White blood cell count (1000 cells/\textmu{} L)",691,73.94,22.62,71,24,0.58
+"Age of current home (years)",679,32.64,26.12,25,36,2.3
+"PostBD FEV1 (L)",694,1.81,0.51,1.75,0.65,0.14

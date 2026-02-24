@@ -1,0 +1,32 @@
+"variable","category","n","pct"
+"Treatment group","budesonide",210,30.22
+"Treatment group","nedocromil",210,30.22
+"Treatment group","placebo",275,39.57
+"Treatment group",NA,0,0
+"Gender","female",283,40.72
+"Gender","male",412,59.28
+"Gender",NA,0,0
+"Ethnicity","black",89,12.81
+"Ethnicity","hispanic",68,9.78
+"Ethnicity","other",59,8.49
+"Ethnicity","white",479,68.92
+"Ethnicity",NA,0,0
+"Any pets in home","no",208,29.93
+"Any pets in home","yes",487,70.07
+"Any pets in home",NA,0,0
+"Use a wood stove for heating/cooking","no",636,91.51
+"Use a wood stove for heating/cooking","yes",58,8.35
+"Use a wood stove for heating/cooking",NA,1,0.14
+"Use a dehumidifier","no",617,88.78
+"Use a dehumidifier","unknown",18,2.59
+"Use a dehumidifier","yes",59,8.49
+"Use a dehumidifier",NA,1,0.14
+"Either parent/partner smokes in home","no",499,71.8
+"Either parent/partner smokes in home","yes",196,28.2
+"Either parent/partner smokes in home",NA,0,0
+"Anyone smokes in home","no",486,69.93
+"Anyone smokes in home","yes",209,30.07
+"Anyone smokes in home",NA,0,0
+"PreBD FFB (obstruction if PreBD FEV1/FVC ratio \textless{} 70\%)","normal",608,87.48
+"PreBD FFB (obstruction if PreBD FEV1/FVC ratio \textless{} 70\%)","obstruction",86,12.37
+"PreBD FFB (obstruction if PreBD FEV1/FVC ratio \textless{} 70\%)",NA,1,0.14
