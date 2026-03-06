@@ -1,0 +1,307 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{textcomp}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{longtable}
+\usepackage[capitalise]{cleveref}
+\usepackage{caption}
+\pgfplotsset{compat=1.18}
+\captionsetup[table]{position=top,justification=raggedright,singlelinecheck=false}
+\captionsetup[longtable]{position=top,justification=raggedright,singlelinecheck=false}
+\captionsetup[figure]{justification=raggedright,singlelinecheck=false}
+\setlength\LTleft{0pt}
+\setlength\LTright{0pt}
+\setlength\LTcapwidth{\textwidth}
+\pgfplotstableset{
+  show variable once/.style={
+    columns/variable/.style={
+      string type,
+      column name=Variable,
+      postproc cell content/.code={
+        \pgfkeysgetvalue{/pgfplots/table/@cell content}{\cellcontent}
+        \edef\currentvar{\cellcontent}
+        \ifx\currentvar\lastvar
+          \pgfkeyssetvalue{/pgfplots/table/@cell content}{}
+        \else
+          \ifnum\pgfplotstablerow>0
+            \pgfkeyssetevalue{/pgfplots/table/@cell content}{\noexpand\hline\space\cellcontent}
+          \fi
+          \xdef\lastvar{\currentvar}
+        \fi
+      }
+    }
+  }
+}
+\def\lastvar{}
+\setlength{\parskip}{0.8em}
+\setlength{\parindent}{0pt}
+%\renewcommand{\thesubsection}{\thesection.\alph{subsection}}
+
+\title{\Large\bfseries ASSIGNMENT 2: REPEATED MEASURES ANOVA AND
+MANOVA}
+\author{Chenghao Wang}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Descriptive Analysis}
+\subsection{Descriptive statistics}\label{subsec:descriptive-statistics}
+We find many missing values in PostBD FEV1 (the continuous outcome variable) 
+in the dataset. Since both repeated measures ANOVA and MANOVA are complete case analyses, 
+we filtered out time points with $\ge 20\%$ missing values in PostBD FEV1, and then
+we only kept subjects whose PostBD FEV1s have no missing values at the retained time points.
+471 out of 695 subjects ( $\sim 68\%$) and
+13 out of 20 time points were included in the analysis for this assignment.
+Across the treatment group, 67-70\% of subjects were retained.
+
+\pgfplotstabletypeset[
+  col sep=comma,
+  ignore chars={"},
+  begin table=\begin{longtable},
+  end table=\end{longtable},
+  columns={visitc,mean_budesonide,sd_budesonide,mean_nedocromil,sd_nedocromil,mean_placebo,sd_placebo},
+  columns/visitc/.style={column name=\shortstack{Visit\\(month)}, fixed, precision=0},
+  columns/mean_budesonide/.style={column name=\shortstack{Mean\\(Bud)}, fixed, fixed zerofill, precision=2},
+  columns/sd_budesonide/.style={column name=\shortstack{SD\\(Bud)}, fixed, fixed zerofill, precision=2},
+  columns/mean_nedocromil/.style={column name=\shortstack{Mean\\(Ned)}, fixed, fixed zerofill, precision=2},
+  columns/sd_nedocromil/.style={column name=\shortstack{SD\\(Ned)}, fixed, fixed zerofill, precision=2},
+  columns/mean_placebo/.style={column name=\shortstack{Mean\\(Plbo)}, fixed, fixed zerofill, precision=2},
+  columns/sd_placebo/.style={column name=\shortstack{SD\\(Plbo)}, fixed, fixed zerofill, precision=2},
+  every head row/.style={
+    before row=\caption{PostBD FEV1 mean and SD by treatment group and visit}\label{tab:descriptive-summary}\\\hline,
+    after row=\hline\endfirsthead
+      \multicolumn{7}{l}{\tablename\ \thetable\ (continued)}\\\hline
+      \shortstack{Visit\\(month)} & \shortstack{Mean\\(Bud)} & \shortstack{SD\\(Bud)} & \shortstack{Mean\\(Ned)} & \shortstack{SD\\(Ned)} & \shortstack{Mean\\(Plbo)} & \shortstack{SD\\(Plbo)}\\\hline\endhead
+      \hline\endfoot
+      \hline\endlastfoot
+  }
+]{../hw2_code/output/descriptive_summary.csv}
+
+\subsection{Interaction plot}
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.85\textwidth]{../hw2_code/output/interaction_plot.png}
+\caption{Mean PostBD FEV1 over time by treatment group}
+\label{fig:interaction-plot}
+\end{figure}
+
+Since we performed repeated measures ANOVA and MANOVA, 
+we treated time
+as a discrete variable.
+As shown in \cref{fig:interaction-plot}, the profiles do not appear parrallel,
+and the treatment groups appear to differ in their overall level.
+
+\section{Univariate Repeated Measures ANOVA}
+
+All the analysis was performed using R for this assignment.
+Nonetheless, we want to highlight the potential discrepancy between
+the results from R and SAS and the corresponding reasons, 
+as this might help us better
+understand the technical details of repeated measures
+ANOVA and MANOVA. The behavioral differences between R and SAS 
+in this case
+were identified using the dental study data from class, 
+and the relevant comparisons are not reported here.
+
+By default, for categorical variables, R uses reference coding, whereas SAS uses sum coding.
+Choice of coding scheme does not affect fitted values and Type I SS, but it can affect Type III SS.
+In this assignment, we set the coding scheme as sum coding, and we use Type III SS, with \texttt{car} package,
+except one test of group effect based on MANOVA, where \verb|stats::manova| is used.
+
+\subsection{Sphericity assessment}
+
+
+The statistics of Mauchly's test for sphericity from R and SAS are identical.
+Yet the p-values are different between R and SAS, because
+their ways of approximation differ. The adjusted p-values are the same.
+
+For this univariate repeated measures ANOVA, I used PostBD FEV1
+as the response variable, with treatment group (between-subject)
+and visit time (within-subject) as
+explanatory variables.
+I used the filtered data from \cref{subsec:descriptive-statistics}.
+
+The Mauchly's test for sphericity shows a significant
+violation of the sphericity assumption 
+(test statistic = $8 \times 10^{-7}$ ; p < 0.001).
+Therefore, we do not have a compound symmetry covariance structure,
+and thus we no longer have exact F tests for within-subject effects (visit time,
+treatment group $\times$ visit time). In this case, we should
+report the adjusted p-values rather than unadjusted p-values
+for the within-subject effects.
+It is worth mentioning that the Mauchly's test for sphericity
+is indeed for evaluating whether the covariance structure is
+of Type H, of which compound symmetry is a special case. 
+
+
+\subsection{Hypothesis tests}
+\subsubsection{Group $\times$ Time interaction}
+The F statistic for treatment group $\times$ visit time interaction effect
+is 1.34.
+The Greenhouse-Geisser (G-G) adjusted p-value for the 
+interaction effect is 0.245,
+and the Huynh-Feldt (H-F) adjusted p-value for the interaction effect is 0.244.
+Both indicate that the interaction effect is insignificant.
+Thus we conclude that the PostBD FEV1 mean trajectories for the three treatment groups
+are parallel.
+Incidentally, the unadjusted p-value for the interaction effect is 0.123,
+which is also insignificant.
+Since the data is from a randomized trial, the test for
+parallelism tells us wether there is evidence of a treatment effect,
+if filtering out missingness does not introduce any bias.
+Although the test result seems to contradict our findings in \cref{fig:interaction-plot},
+there are several possible explanations for this.
+First, the unparallel pattern might be due to noise. Based on \cref{tab:descriptive-summary},
+the standard deviations are larger than the difference in the means 
+between the treatment groups.
+Besides, the trajectories appear parallel in some time intervals
+while unparallel in others. Yet the test for interaction effect
+evaluates the group difference across all time points. Despite the 
+local non-parallelism, the global result is slightly affected.
+
+\subsubsection{Time effect}
+Since the treament groups have parallel profiles, we directly
+tested the visit time effect. The F statistic for visit time effect is 2274.41.
+Both the G-G adjusted p-value and the H-F adjusted p-value are < 0.001.
+This suggests that the mean PostBD FEV1 changes over visit time.
+Incidentally, the unadjusted p-value for visit time effect is also < 0.001.
+
+\subsubsection{Group effect}
+With parallelism, we tested the treatment group effect
+averaged over time using an F test,
+which indicates an insignficant result
+(F = 0.84, p = 0.434). Thus there is no evidence that the treatment groups
+differ in their overall mean PostBD FEV1.
+
+\section{MANOVA}
+In MANOVA, there are four types of tests for an effect.
+The test statistics are as follows:
+Wilks' Lambda, Pillai's Trace, Hotelling-Lawley Trace, and Roy's Greates Root.
+Each of the four tests gives the same result in R and SAS, except Hotelling-Lawley Trace,
+because the approximation differs between R and SAS.
+In this assignment, we only report 
+Wilks' Lambda and the corresponding p-value.
+
+
+\subsection{Test of parallelism}
+The Wilks' Lambda for 
+treatment group $\times$ visit time effect is 0.89 (F = 2.26),
+and the corresponding p-value is < 0.001. Thus, we do not reject the null hypothesis
+and conclude that the treatment group profiles are parallel.
+This shows that the difference in PostBD FEV1 between the treatment groups
+do not change over time. Since the data is from a randomized trial,
+this test result indicates that there is no evidence of a treatment effect,
+if filtering out missingness does not introduce any bias.
+
+\subsection{Test of group effect}\label{subsec:test-group}
+We performed two tests in this subsection.
+The first test assesses treatment group effect at each time point
+simultaneously, which does not rely on the assumption that
+the group profiles are parallel. Unlike other tests in this assignment,
+this test is performed using
+\verb|stats::manova| in R. The Wilks' Lambda for treatment group effect
+is 0.86 (F = 2.72), and the corresponding p-value is < 0.001. Thus,
+we reject the null and conclude that the postBD FEV1 means
+are different across treatment groups at certain visit times.
+
+The second test assesses treatment group effect averaged over time,
+which relies on the parallelism assumption (a reasonable assumption
+in our case, given the test results for parallelism).
+The Wilks' Lambda is 1.00 (F = 0.84), and the corresponding p-value
+is 0.434. 
+Thus, we do not reject the null and conclude that the
+postBD FEV1 means averaged over time
+are the same for each treatment group.
+
+
+\subsection{Test of time effect}
+Like \cref{subsec:test-group},
+we performed two tests of time effect.
+The first test evaluates whether the trajectories
+of postBD FEV1 trajectories
+are flat for each treatment group, which does not
+rely on the parallelism assumption.
+The Wilks' Lambda is 0.06 (F = 61.30), and the corresponding p-value
+is < 0.001. Thus, we reject the null and conclude that
+postBD FEV1 mean trajectories are not flat for certain treatment groups.
+
+The second test evaluates whether the trajectories
+of postBD FEV1 mean are flat by averaging over the
+treatment groups. The Wilks' Lambda is 0.06 (F = 552.57), and the
+corresponding p-value is < 0.001. Thus, we reject the null and conclude that
+postBD FEV1 mean trajectories are not flat by averaging over the treatment
+groups.
+
+The test of time effect using univariate repeated measures ANOVA
+produces a significant result,
+which is the same as the test results using MANOVA.
+Although the F statistics and the p-values
+are different.
+
+
+\section{Comparison and Interpretation}
+
+\subsection{Comparison of approaches}
+The results from the univariate repeated measures ANOVA and
+MANOVA lead to the same conclusions,
+except the test simultaneously assessing treatment group effect
+at each time point in MANOVA, which gives a signficant result.
+The test of treatment group effect in univariate repeated measures ANOVA
+and the second test of treatment group effect in MANOVA both give
+an insignificant result, since these two tests 
+evaluate the treatment group effect averaged over time.
+The null hypotheses are closely related but not identical.
+Besides, as is illustrated in \cref{fig:interaction-plot},
+the group profiles appear coincident at some time points while
+not coincident at the others, which likely contributes to
+the difference in the treatment group effect test results.
+
+Moreover, although most tests produce results that lead to
+the same conclusions, yet the F statistics and the p-values
+are not identical (identical for the test of group
+effect averaged over time, as group effect is between-subject). 
+This is because the covariance structures in the models
+differ. In univariate ANOVA's model, the covariance matrix is
+assumed to be
+compound symmetry, while it is assumed to be unstructured in MANOVA.
+Since the Mauchly's test for sphericity strongly indicates that
+the covariance is not compound symmetry, MANOVA is more
+appropriate for our data.
+
+\subsection{Scientific interpretation}
+
+Based on the test results above, we find that
+there is no significant difference between the
+intervention treatments and placebo in PostBD FEV1,
+a measure of lung function. 
+Additionally, postBD FEV1 significantly increases over time,
+indicating that the lung functions of children with asthma
+continuously improve.
+
+\subsection{Limitations}
+First, the missingness mechanism is not clear.
+Moreover, missing data occurred not only among
+certain participants, but also at multiple time points,
+where some time points showed substantial proportions
+of missingness (> 80\%).
+Given that both repeated measures ANOVA and MANOVA are complete case analyses,
+we filtered out certain time points and participants, as described
+in \cref{subsec:descriptive-statistics}.
+However, this may compromise efficiency and introduce bias.
+
+Second, we did not adjust for any covariates other than treatment group
+and visit time for simplicity. This can introduce bias and reduce power.
+
+Lastly, we analyzed solely the primary outcome, PostBD FEV1, and
+did not assess other outcomes. Accordingly, this may 
+influence our conclusions regarding the treatment effect.
+
+\end{document}
