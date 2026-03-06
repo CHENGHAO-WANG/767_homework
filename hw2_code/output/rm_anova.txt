@@ -1,0 +1,31 @@
+
+Univariate Type III Repeated-Measures ANOVA Assuming Sphericity
+
+            Sum Sq num Df Error SS den Df   F value Pr(>F)    
+(Intercept)  37585      1  2158.56    468 8148.9106 <2e-16 ***
+TG               8      2  2158.56    468    0.8360 0.4341    
+visitc        2330     12   479.44   5616 2274.4052 <2e-16 ***
+TG:visitc        3     24   479.44   5616    1.3407 0.1234    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+
+Mauchly Tests for Sphericity
+
+          Test statistic p-value
+visitc        8.4521e-07       0
+TG:visitc     8.4521e-07       0
+
+
+Greenhouse-Geisser and Huynh-Feldt Corrections
+ for Departure from Sphericity
+
+           GG eps Pr(>F[GG])    
+visitc    0.20863     <2e-16 ***
+TG:visitc 0.20863     0.2445    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+            HF eps Pr(>F[HF])
+visitc    0.209842  0.0000000
+TG:visitc 0.209842  0.2442001

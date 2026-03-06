@@ -1,0 +1,5 @@
+           Df  Wilks approx F num Df den Df    Pr(>F)    
+TG          2 0.8611   2.7233     26    912 9.016e-06 ***
+Residuals 468                                            
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
