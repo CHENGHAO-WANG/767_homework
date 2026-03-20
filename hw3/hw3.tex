@@ -1,0 +1,477 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{textcomp}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{longtable}
+\usepackage[capitalise]{cleveref}
+\usepackage{caption}
+\pgfplotsset{compat=1.18}
+\captionsetup[table]{position=top,justification=raggedright,singlelinecheck=false}
+\captionsetup[longtable]{position=top,justification=raggedright,singlelinecheck=false}
+\captionsetup[figure]{justification=raggedright,singlelinecheck=false}
+\setlength\LTleft{0pt}
+\setlength\LTright{0pt}
+\setlength\LTcapwidth{\textwidth}
+\pgfplotstableset{
+  show variable once/.style={
+    columns/variable/.style={
+      string type,
+      column name=Variable,
+      postproc cell content/.code={
+        \pgfkeysgetvalue{/pgfplots/table/@cell content}{\cellcontent}
+        \edef\currentvar{\cellcontent}
+        \ifx\currentvar\lastvar
+          \pgfkeyssetvalue{/pgfplots/table/@cell content}{}
+        \else
+          \ifnum\pgfplotstablerow>0
+            \pgfkeyssetevalue{/pgfplots/table/@cell content}{\noexpand\hline\space\cellcontent}
+          \fi
+          \xdef\lastvar{\currentvar}
+        \fi
+      }
+    }
+  }
+}
+\def\lastvar{}
+\setlength{\parskip}{0.8em}
+\setlength{\parindent}{0pt}
+%\renewcommand{\thesubsection}{\thesection.\alph{subsection}}
+
+\title{\Large\bfseries ASSIGNMENT 3: GENERAL LINEAR MODEL — FITTING
+AND INFERENCE}
+\author{Chenghao Wang}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{ Model Specification}
+
+\subsection{Model formulation}
+
+The model is specified in \cref{subsec:covariance-structure}.
+
+\subsection{Visualization}
+
+The observed data along with the fitted mean structure
+is demonstrated in \cref{subsubsec:fitted-mean-trajectories}.
+
+The model included planned visit time (unit: month)
+instead of actual visit time (unit: day). As shown in \cref{fig:measurement-timing-deviation},
+such design appears plausible.
+
+As is illustrated in \cref{fig:mean-trajectories-by-treatment},
+the mean PostBD FEV1 trajectories of each treatment group
+over visit time
+appears to be linear, except at a few time points.
+Actually, PostBD FEV1 exhibits high missingness 
+at those time points.
+Those missingness appears to introduce considerable bias.
+Thus we filtered out time points with $\ge 75\%$ missing values in PostBD FEV1.
+The filtered data shows a linear trend between mean PostBD FEV1
+and visit time (\cref{fig:filtered-mean-trajectories-by-treatment}).
+
+
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.9\textwidth]{../hw3_code/output/measurement_timing_deviation.png}
+  \caption{Measurement timing deviation across visits.}
+  \label{fig:measurement-timing-deviation}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.9\textwidth]{../hw3_code/output/mean_trajectories_by_TG_over_visitc.png}
+  \caption{Mean trajectories by treatment group over visits.}
+  \label{fig:mean-trajectories-by-treatment}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.9\textwidth]{../hw3_code/output/filtered_mean_trajectories_by_TG_over_visitc.png}
+  \caption{Filtered mean trajectories by treatment group over visits.}
+  \label{fig:filtered-mean-trajectories-by-treatment}
+\end{figure}
+
+
+
+\section{Estimation and Covariance Structure}
+
+\subsection{Covariance structure}\label{subsec:covariance-structure}
+
+As a starting point, The model formulation is specified as follows:
+\begin{multline}
+\label{eq:model1}
+Y_{i} = I(TG_i = bud)\beta_{bud} + I(TG_i = ned)\beta_{ned} + I(TG_i = plbo)\beta_{plbo} \\
+{}+ I(TG_i = bud)\,visit_{i}\beta_{visit \times bud}
++ I(TG_i = ned)\,visit_{i}\beta_{visit \times ned} \\
+{}+ I(TG_i = plbo)\,visit_{i}\beta_{visit \times plbo}
++ age\_rz_{i}\,\beta_{age\_rz}
++ I(gender_{i} = m)\,\beta_{gender}\\
+{}+ I(ethnic_{i} = b)\,\beta_{ethnic:black}
++ I(ethnic_{i} = h)\,\beta_{ethnic:hispanic}\\
+{}+ I(ethnic_{i} = o)\,\beta_{ethnic:other})
++ \varepsilon_{i}\\
+\varepsilon_{i} \sim N(0,\Sigma)
+\end{multline}
+
+The model included group-specific intercepts and
+group-specific time slopes. The model adjusted for
+three covariates: gender, ethnic, and age at randomization,
+where female and white were set as reference levels.
+The other covariates were not included, because they suffer
+substantial missingness, which cannot be handled by
+GLM.
+The parameters are interpreted as follows:
+\begin{itemize}
+  \item $\beta_{bud}$: the baseline mean outcome for white, female subjects receiving budesonide, with baseline age set to 0.
+  \item $\beta_{ned}$: the baseline mean outcome for white, female subjects receiving nedocromil, with baseline age set to 0.
+  \item $\beta_{plbo}$: the baseline mean outcome for white, female subjects receiving placebo, with baseline age set to 0.
+  \item $\beta_{visit \times bud}$: the change in mean outcome for each one-month increase in time among subjects receiving budesonide, after controlling for ethnicity, gender, and baseline age.
+  \item $\beta_{visit \times ned}$: the change in mean outcome for each one-month increase in time among subjects receiving nedocromil, after controlling for ethnicity, gender, and baseline age.
+  \item $\beta_{visit \times plbo}$: the change in mean outcome for each one-month increase in time among subjects receiving placebo, after controlling for ethnicity, gender, and baseline age.
+  \item $\beta_{age\_rz}$: the change in mean outcome for one-year increase in baseline age between subjects, after controlling for treatment group, ethnicity, and gender.
+  \item $\beta_{gender}$: the difference in mean outcome comparing male to female subjects, after controlling for treatment group, ethnicity, and baseline age.
+  \item $\beta_{ethnic:black}$: the difference in mean outcome comparing black to white subjects, after controlling for treatment group, gender, and baseline age.
+  \item $\beta_{ethnic:hispanic}$: the difference in mean outcome comparing hispanic to white subjects, after controlling for treatment group, gender, and baseline age.
+  \item $\beta_{ethnic:other}$: the difference in mean outcome comparing subjects in other ethnicity group to white subjects, after controlling for treatment group, gender, and baseline age.
+  \item $\varepsilon_i$: the random deviation of subject $i$'s observed outcomes from the mean outcomes.
+\end{itemize}
+
+\subsubsection{Correlation structure}
+
+First, we fit the model assuming
+an unstructured correlation matrix and equal variances over time in order to
+determine the most appropriate correlation structure for the data.
+However, there are 16 time points in the filtered data, which
+means $16 \times 15/2 = 120$ parameters in the correlation matrix.
+leading to prohibitive computational burden.
+For computational efficiency, we selected a subset of time points
+(0, 12, 24, 36, 48, 60, 72, 84, 96)
+to fit the model using RMEL. R package \texttt{nlme} was used.
+The estimated correlation matrix is shown in \cref{tab:fit-reml-rough-correlation}.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Estimated unstructured correlation matrix}
+  \label{tab:fit-reml-rough-correlation}
+  \input{../hw3_code/output/fit_reml_rough_correlation_matrix.tex}
+\end{table}
+
+Based on the pattern shown in \cref{tab:fit-reml-rough-correlation},
+we assumed an exponential correlation structure,
+since the times points are not equally spaced.
+Although the correlation with fixed lag slightly decreases over time,
+yet exponential correlation is still acceptable, which substantially reduces
+the number of parameters to estimate.
+Correlations depending on absolute time locations might imply
+variance changing over time.
+So next, we evaluated variance heterogeneity using a subset of
+data with less time points (0, 24, 48, 72),
+as we have more parameters to estimate. We fit the model
+assuming an unstructured correlation matrix and unequal variances over time
+using REML. The estimated correlation matrix is shown in
+\cref{tab:fit-reml-rough2-correlation}, and the estimated
+covariance matrix
+is shown in \cref{tab:fit-reml-rough2-covariance}.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Estimated unstructured correlation matrix}
+  \label{tab:fit-reml-rough2-correlation}
+  \input{../hw3_code/output/fit_reml_rough2_correlation_matrix.tex}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Estimated unstructured covariance matrix}
+  \label{tab:fit-reml-rough2-covariance}
+  \input{../hw3_code/output/fit_reml_rough2_covariance_matrix.tex}
+\end{table}
+
+As shown in \cref{tab:fit-reml-rough2-correlation}
+and \cref{tab:fit-reml-rough2-covariance},
+the model with unequal variances over time
+modestly alleviates the issue of correlation depending
+on absolute time locations. What is more important,
+we find evidence of variance heterogeneity.
+
+\subsubsection{Variance structure}
+
+Then we evaluated different variance models.
+We fit the model with exponetial correlation structure
+to the data with 16 time points
+using RMEL. The result is shown in \cref{tab:variance-model-compare}.
+The model with time-specific variance exhibits the
+smallest AIC. It is noteworthy that AIC is generally preferred
+over BIC, as BIC's penalty grows with sample size
+and tends to select parsimonious models.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Comparison of variance models by AIC and BIC}
+  \label{tab:variance-model-compare}
+  \begin{tabular}{lcrrr}
+    \hline
+    Variance model & Formulation & df & AIC & BIC \\
+    \hline
+    Time-specific variance & $\sigma^2(t) = \sigma^2_t$ & 28 & -1785.9 & -1585.0 \\
+    Constant variance & $\sigma^2(t) = \sigma^2$ & 13 & -1699.5 & -1606.3 \\
+    Power variance & $\sigma^2(t) = |t|^{2\theta}$ & 14 & -1708.3 & -1607.8 \\
+    Constant plus power variance & $\sigma^2(t) = (\theta_1 + |t|^{\theta_2})^2$ & 15 & -1752.2 & -1644.6 \\
+    Exponential variance & $\sigma^2(t) = exp(2\theta t) $ & 14 & -1751.3 & -1650.8 \\
+    Constant plus proportion variance & $\sigma^2(t) = a^2 + b^2 t^2$ & 15 & -1727.6 & -1620.0 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\subsubsection{Baseline intercept}
+
+Since the data is from a randomized trial,
+it is reasonable to assume that the baseline means
+are equal. Under this constraint, the model is specified
+as follows:
+
+\begin{multline}
+\label{eq:model2}
+Y_{i} = \beta_{0} + I(TG_i = bud)\,visit_{i}\beta_{visit \times bud}
++ I(TG_i = ned)\,visit_{i}\beta_{visit \times ned} \\
+{}+ I(TG_i = plbo)\,visit_{i}\beta_{visit \times plbo}
++ age\_rz_{i}\,\beta_{age\_rz}
++ I(gender_{i} = m)\,\beta_{gender}\\
+{}+ I(ethnic_{i} = b)\,\beta_{ethnic:black}
++ I(ethnic_{i} = h)\,\beta_{ethnic:hispanic}\\
+{}+ I(ethnic_{i} = o)\,\beta_{ethnic:other})
++ \varepsilon_{i}\\
+\varepsilon_{i} \sim N(0,\Sigma)
+\end{multline}
+
+We fit the two models with exponential correlation structure
+and time-specific variance structure using ML,
+and we performed a likelihood ratio test (LRT) to compare \cref{eq:model2}
+with \cref{eq:model1}. The p-value is 0.271,
+which suggests that the additional parameters in \cref{eq:model1}
+do not significantly improve the model fit.
+Moreover, the AIC of \cref{eq:model2}, -1864.3, is lower than
+the AIC of \cref{eq:model1}, -1863.0. Thus we conclude that
+\cref{eq:model2} appears to provide an adequate fit while
+avoiding unnecessary complexity.
+
+$beta_0$ is interpreted as baseline mean outcome for white, female
+subjects with baseline age set to 0.
+
+\subsubsection{Group-specific covariance matrices}
+
+Lastly, We evaluated the model with group-specific covariance matrices.
+Unfortunately, group-specific correlation matrix is not supported
+by \texttt{nlme} package. Thus we evaluated the model with
+group-specific variances against the model with homegeneous variances
+across groups, while all other components were specified as in \cref{eq:model2},
+and the models assume exponential correlation structure.
+
+The p-value of LRT is $< 0.001$.
+Additionally, the AIC of the more complex model is -1803.8,
+lower than the AIC of the simpler model, -1795.3. The estimated
+variances are shown in \cref{fig:variance-compare}. Thus we
+conclude that the model
+with group-specific variances provides a more adequate fit.
+The final model formulation is as follows:
+
+
+\begin{multline}
+\label{eq:model3}
+Y_{i} = \beta_{0} + I(TG_i = bud)\,visit_{i}\beta_{visit \times bud}
++ I(TG_i = ned)\,visit_{i}\beta_{visit \times ned} \\
+{}+ I(TG_i = plbo)\,visit_{i}\beta_{visit \times plbo}
++ age\_rz_{i}\,\beta_{age\_rz}
++ I(gender_{i} = m)\,\beta_{gender}\\
+{}+ I(ethnic_{i} = b)\,\beta_{ethnic:black}
++ I(ethnic_{i} = h)\,\beta_{ethnic:hispanic}\\
+{}+ I(ethnic_{i} = o)\,\beta_{ethnic:other})
++ \varepsilon_{i}\\
+\varepsilon_{i} \sim N(0,\Sigma_{TG_i})
+\end{multline}
+
+\begin{figure}[htbp]
+   \centering
+   \includegraphics[width=0.8\textwidth]{../hw3_code/output/variance_compare.png}
+   \caption{Comparison of models with homogeneous and group-specific variances.}
+   \label{fig:variance-compare}
+\end{figure}
+ 
+\subsubsection{Fitted mean trajectories}\label{subsubsec:fitted-mean-trajectories}
+ 
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{../hw3_code/output/fitted_observed_mean_compare.png}
+    \caption{Observed and fitted mean trajectories by treatment group.}
+    \label{fig:fitted-observed-mean-compare}
+\end{figure}
+
+To compute the
+fitted mean for each treatment group at each time point,
+we computed the mean of baseline age, the proportion of
+each gender, and the proportion of each ethnic group.
+The observed PostBD FEV1 means along with fitted PostBD FEV1 means
+for each treatment group over time are illustrated in
+\cref{fig:fitted-observed-mean-compare}. The model
+shows an adequate fit to the data. However, the fitted
+line underestimates the data. This is mainly due to a coincidence:
+The difference in mean outcome among the three treatment groups
+at later time points which have high leverage
+is even smaller than that at baseline,
+where the difference is solely due to randomness. Another
+potential reason is that the correlation structure
+we assume may be less than ideal, negatively affecting
+the the mean model estimation.
+
+
+\subsection{Estimation method}
+
+
+
+
+\begin{table}[htbp]
+  \caption{Coefficient estimates with model-based estimates}
+  \label{tab:coef-model-based}
+  \begingroup
+  \catcode`\_=12\relax
+  \pgfplotstabletypeset[
+    col sep=comma,
+    columns={term,Estimate,StdError,t,ddfm,p.val},
+    columns/term/.style={column name=Term,string type},
+    columns/Estimate/.style={column name=Estimate,fixed,precision=4},
+    columns/StdError/.style={column name=Std. Error,fixed,precision=4},
+    columns/t/.style={column name=t,fixed,precision=3},
+    columns/ddfm/.style={column name=df,fixed,precision=0},
+    columns/p.val/.style={column name=p-value,string type},
+    every head row/.style={before row=\hline,after row=\hline},
+    every last row/.style={after row=\hline}
+  ]{../hw3_code/output/coef_model_based.csv}
+  \endgroup
+\end{table}
+
+We fit the model using REML. The parameter estimates, model-based
+standard errors, t-statistics, degress of freedom (Between-Within method), 
+and p-value
+are listed in \cref{tab:coef-model-based}.
+The estimated covariance matrices for each treatment group
+are reported in \cref{tab:covariance-matrix-budesonide},
+\cref{tab:covariance-matrix-nedocromil} and
+\cref{tab:covariance-matrix-placebo}.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Estimated covariance matrix under exponential correlation with unequal variance (Budesonide)}
+  \label{tab:covariance-matrix-budesonide}
+  \begingroup\let\small\scriptsize\makebox[\textwidth][c]{\input{../hw3_code/output/fit_reml_c_exp_unequal_var_covariance_matrix_budesonide.tex}}\endgroup
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Estimated covariance matrix under exponential correlation with unequal variance (Nedocromil)}
+  \label{tab:covariance-matrix-nedocromil}
+  \begingroup\let\small\scriptsize\makebox[\textwidth][c]{\input{../hw3_code/output/fit_reml_c_exp_unequal_var_covariance_matrix_nedocromil.tex}}\endgroup
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Estimated covariance matrix under exponential correlation with unequal variance (Placebo)}
+  \label{tab:covariance-matrix-placebo}
+  \begingroup\let\small\scriptsize\makebox[\textwidth][c]{\input{../hw3_code/output/fit_reml_c_exp_unequal_var_covariance_matrix_placebo.tex}}\endgroup
+\end{table}
+
+
+
+
+
+\section{Variance Estimation }
+
+\subsection{Comparison}
+
+\begin{table}[htbp]
+  \caption{Comparison of model-based and robust coefficient summaries}
+  \label{tab:coef-model-vs-robust}
+  \input{../hw3_code/output/coef_model_vs_robust.tex}
+\end{table}
+
+The model-based and robust standard errors for
+the fixed effects are presented in \cref{tab:coef-model-vs-robust}.
+They are limitedly different, and this discrepancy does
+not affect the statistical significance of the
+fixed effects.
+
+
+\subsection{Interpretation}
+
+The model-based and robust standard errors
+are broadly similar, indicating that the covariance model
+was correctly specified.
+Therefore, the model-based variance estimator
+is more efficient.
+Besides, the model was fit to a dataset with 695 subjects,
+which provides large sample size,
+so the robust variance estimator is also appropriate.
+To summarize, these two variance estimators are comparable,
+while the model-based one is slightly preferable.
+
+\section{Hypothesis Testing}
+
+\subsection{Primary hypothesis}
+
+We performed a test of parallelism, with
+$H_0: \beta_{visit \times bud} = \beta_{visit \times ned} = \beta_{visit \times plbo}$
+versus $H_1: \text{not all three are equal}$.
+The F statistic is 4.59, and the p-value is 0.010, which indicates
+a significant result. Thus we reject the null hypothesis
+and conclude that PostBD FEV1 changes differently over time
+among the three treatment groups.
+
+\subsection{Additional test}
+We performed two tests to separately compare budesonide group versus
+placebo group and nedocromil group versus placebo group.
+
+First, we tested $H_0: \beta_{visit \times bud} = \beta_{visit \times plbo}$
+versus $H_1: \beta_{visit \times bud} \neq \beta_{visit \times plbo}$.
+The F statistic is 0.41, and the p-value is 0.521, which
+indicates an insignficant result. Thus we do not reject the null
+hypothesis and conclude that PostBD FEV1 does not
+change differently over time between budesonide group and placebo
+group.
+
+Second, we tested $H_0: \beta_{visit \times ned} = \beta_{visit \times plbo}$
+versus $H_1: \beta_{visit \times ned} \neq \beta_{visit \times plbo}$.
+The F statistic is 4.48, and the p-value is 0.034, which suggests
+a significant result. Thus we reject the null hypothesis and conclude
+that PostBD FEV1 changes differently over time between nedocromil
+group and placebo group.
+
+
+\section{Summary and Interpretation}
+
+We fit a general linear model using REML. We assumed an exponential
+correlation structure, heterogeneouos variance over time and across
+treatment groups, baseline mean outcomes constraint to be equal,
+and linear outcome-time trend. These assumptions were chosen carefully
+and have been justified using data visualization, LRT, or AIC.
+We find that PostBD FEV1 changes differently over time among
+the three treatment groups, where nedocromil group exhibits significant
+difference relative to placebo group; however, budesonide shows
+no signficant difference comparing to placebo group.
+This implies that nedocromil is effective in improving
+lung function among children with asthma.
+
+\section{Code Availability}
+
+The code is available at \url{https://github.com/CHENGHAO-WANG/767_homework/tree/main/hw3_code}.
+
+\end{document}
