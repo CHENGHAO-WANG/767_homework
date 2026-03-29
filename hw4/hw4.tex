@@ -1,0 +1,466 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{textcomp}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{longtable}
+\usepackage[capitalise]{cleveref}
+\usepackage{caption}
+\pgfplotsset{compat=1.18}
+\captionsetup[table]{position=top,justification=raggedright,singlelinecheck=false}
+\captionsetup[longtable]{position=top,justification=raggedright,singlelinecheck=false}
+\captionsetup[figure]{justification=raggedright,singlelinecheck=false}
+\setlength\LTleft{0pt}
+\setlength\LTright{0pt}
+\setlength\LTcapwidth{\textwidth}
+\pgfplotstableset{
+  show variable once/.style={
+    columns/variable/.style={
+      string type,
+      column name=Variable,
+      postproc cell content/.code={
+        \pgfkeysgetvalue{/pgfplots/table/@cell content}{\cellcontent}
+        \edef\currentvar{\cellcontent}
+        \ifx\currentvar\lastvar
+          \pgfkeyssetvalue{/pgfplots/table/@cell content}{}
+        \else
+          \ifnum\pgfplotstablerow>0
+            \pgfkeyssetevalue{/pgfplots/table/@cell content}{\noexpand\hline\space\cellcontent}
+          \fi
+          \xdef\lastvar{\currentvar}
+        \fi
+      }
+    }
+  }
+}
+\def\lastvar{}
+\setlength{\parskip}{0.8em}
+\setlength{\parindent}{0pt}
+%\renewcommand{\thesubsection}{\thesection.\alph{subsection}}
+
+\title{\Large\bfseries ASSIGNMENT 4: GENERAL LINEAR MODEL — MODEL SELECTION}
+\author{Chenghao Wang}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+Mean model estimation and covariance model estimation are interwoven.
+Therefore, mean model selection depends on a correctly-specified
+covariance model; covariance model selection also depends on a
+correctly-specified mean model.
+
+One strategy is that we first select the mean model and then select
+the covariance model. However, 
+as is described in Assignment 3,
+the dataset contains 16 time points,
+which means $16 \times 15 / 2 = 120$ parameters
+in the unstructured correlation matrix, 
+resulting in a high computational cost.
+Thus, in this assignment, we adopt a different strategy.
+We first select the covariance model;
+then we select the mean model; lastly, we verify
+the preliminary covariance structure is suitable.
+
+R package \texttt{nlme} and \texttt{mmrm} were used.
+
+\section{Covariance Model Selection}\label{sec:Covariance-Model-Selection}
+
+\subsection{Candidate covariance structures}\label{subsec:candidate-covariance-structures}
+
+To find the covariance structure that provides the most adequate fit,
+we fit saturated mean models (one parameter per group-bytime cell) adjusting
+for three covariates (age at randomization, gender, and ethnic group),
+paired with five correlation structures respectively,
+which are Compound Symmetry, AR(1), Exponential, Toeplitz, and Ante-dependence (ANTE).
+For a description of ANTE, see
+\href{https://cran.r-project.org/web/packages/mmrm/vignettes/covariance.html#homogeneous-ad-and-heterogeneous-ante-dependence-adh}{here}.
+In addition, we assumed homogeneous variances at this step,
+while the variance-covariance structures were evaluated
+after the selction of correlation structure.
+The models were estimated using REML.
+The correlation structures comparison 
+is shown in \cref{tab:corr-model-compare}.
+
+\begin{table}[htbp]
+\caption{Model comparison for candidate correlation structures}
+\label{tab:corr-model-compare}
+\centering
+\pgfplotstabletypeset[
+  col sep=comma,
+  columns={model,dof,logLik,AIC},
+  columns/model/.style={column name=Model,string type},
+  columns/dof/.style={column name=DF,column type=r},
+  columns/logLik/.style={
+    column name=logLik,
+    column type=r,
+    fixed,
+    precision=3
+  },
+  columns/AIC/.style={
+    column name=AIC,
+    column type=r,
+    fixed,
+    precision=3
+  },
+  every head row/.style={before row=\hline,after row=\hline},
+  every last row/.style={after row=\hline}
+]{../hw4_code/output/model_compare.csv}
+\end{table}
+
+
+
+\subsection{Model comparison}
+
+ANTE shows the lowest AIC, indicating that the model
+with ANTE correlation structure exhibits the most
+adequate fit among the five candidates.
+Although we selected Exponential correlation structure
+in Assignment 3 due to unequally spaced time points,
+yet we also reported that the correlation with fixed lag
+slightly decreases over time, which can
+be accommodated by ANTE.
+
+Next, assuming the mean structure identical to the one
+in \cref{subsec:candidate-covariance-structures} and
+ANTE correlation structure, we fit the models
+with four variance-covariance structures respectively,
+which are listed in \cref{tab:var-model-compare}.
+Similary, the models were estimated using REML.
+Incidentally, ANTE is available in \texttt{mmrm}
+but not in \texttt{nlme}. And the diverse variance structures
+that we inspected in Assignment 3
+are only supported by \texttt{nlme} but not \texttt{mmrm}.
+Besides, group-specific covariance is supported by
+\texttt{mmrm}, while \texttt{nlme} only supports
+group-specific variance and does not support 
+group-specific correlation.
+
+\begin{table}[htbp]
+\caption{Model comparison for candidate variance-covariance structures under ANTE}
+\label{tab:var-model-compare}
+\centering
+\pgfplotstabletypeset[
+  col sep=comma,
+  columns={model,dof,logLik,AIC},
+  columns/model/.style={column name=Model,verb string type},
+  columns/dof/.style={column name=DF,column type=r},
+  columns/logLik/.style={
+    column name=logLik,
+    column type=r,
+    fixed,
+    precision=3
+  },
+  columns/AIC/.style={
+    column name=AIC,
+    column type=r,
+    fixed,
+    precision=3
+  },
+  every head row/.style={before row=\hline,after row=\hline},
+  every last row/.style={after row=\hline}
+]{../hw4_code/output/aic_compare_mmrm_var.csv}
+\end{table}
+
+As shown in \cref{tab:var-model-compare},
+Hetergeneous variance with group-specific ANTE covariance
+provides the most adequate fit.
+
+\section{Mean Model Selection}\label{sec:Mean-Model-Selection}
+
+\subsection{Candidate mean structures}
+
+\begin{table}[htbp]
+\caption{Model comparison for candidate mean structures}
+\label{tab:mean-model-compare}
+\centering
+\pgfplotstabletypeset[
+  col sep=comma,
+  columns={model,dof,logLik,AIC,BIC},
+  columns/model/.style={column name=Model,string type},
+  columns/dof/.style={column name=DF,column type=r},
+  columns/logLik/.style={
+    column name=logLik,
+    column type=r,
+    fixed,
+    precision=3
+  },
+  columns/AIC/.style={
+    column name=AIC,
+    column type=r,
+    fixed,
+    precision=3
+  },
+  columns/BIC/.style={
+    column name=BIC,
+    column type=r,
+    fixed,
+    precision=3
+  },
+  every head row/.style={before row=\hline,after row=\hline},
+  every last row/.style={after row=\hline}
+]{../hw4_code/output/mean_aic_compare.csv}
+\end{table}
+
+Using group-specific heterogeneous ANTE covariance structure, 
+We fit models with four candidate mean structures,
+which are linear trend, linear spline (knot = 60, selected
+based on the mean response trajectories plot in Assignment 3),
+quadratic trend, and saturated mean model. 
+The baseline mean responses of each treatment group
+adjusting for baseline age, gender, and ethnic group
+were constrained to be equal under
+the linear and the linear spline models,
+by excluding the main effect
+of each treatment group.
+Under the quadratic model, such constraint was not
+imposed, while time was centered to reduce collinearity.
+The models were
+estimated using ML. The mean structure comparison
+is illustrated in \cref{tab:mean-model-compare}.
+
+\subsection{Model comparison}
+
+As shown in \cref{tab:mean-model-compare},
+The saturated mean model exhibits the lowest AIC by a very
+large margin,
+suggesting that the gain in fit from this model
+is worth the extra parameters.
+However, the saturated mean model gives the highest BIC,
+indicating that this model is not preferred,
+if we impose a stronger complexity penalty.
+Additionally, the linear spline model (knot = 60)
+shows the second lowest AIC and the lowest BIC,
+indicating an acceptable fit.
+Thus we selected the linear spline model (knot = 60)
+as the final model, because it acheives a more
+parsimonious representation and is more interpretable.
+Nonetheless, a further verifaction on the covariance structure
+is desirable, which is shown in \cref{subsec:Preliminary-covariance-structure-verification}.
+
+\subsection{Preliminary covariance structure verification}\label{subsec:Preliminary-covariance-structure-verification}
+
+Finally, we re-evaluated the covariance structures
+using the linear spline model (knot = 60). The models were
+estimated using REML. As shown in \cref{tab:lsp-corr-model-compare},
+ANTE provides the most adequate fit
+among the linear spline models with homogeneous variance
+and various correlation structures.
+Furthermore, under ANTE,
+the model with heterogeneous variance with group-specific covariance
+provides the most adequate fit (\cref{tab:lsp-var-model-compare}).
+These results confirm that the preliminary choice of
+covariance structure remains the most acceptable one
+under the linear spline model.
+
+\begin{table}[htbp]
+\caption{Correlation structure comparison under the linear spline model}
+\label{tab:lsp-corr-model-compare}
+\centering
+\pgfplotstabletypeset[
+  col sep=comma,
+  columns={model,dof,logLik,AIC},
+  columns/model/.style={column name=Model,string type},
+  columns/dof/.style={column name=DF,column type=r},
+  columns/logLik/.style={
+    column name=logLik,
+    column type=r,
+    fixed,
+    precision=3
+  },
+  columns/AIC/.style={
+    column name=AIC,
+    column type=r,
+    fixed,
+    precision=3
+  },
+  every head row/.style={before row=\hline,after row=\hline},
+  every last row/.style={after row=\hline}
+]{../hw4_code/output/lsp_cov_aic_compare.csv}
+\end{table}
+
+\begin{table}[htbp]
+\caption{Variance structure comparison under the linear spline model}
+\label{tab:lsp-var-model-compare}
+\centering
+\pgfplotstabletypeset[
+  col sep=comma,
+  columns={model,dof,logLik,AIC},
+  columns/model/.style={column name=Model,string type},
+  columns/dof/.style={column name=DF,column type=r},
+  columns/logLik/.style={
+    column name=logLik,
+    column type=r,
+    fixed,
+    precision=3
+  },
+  columns/AIC/.style={
+    column name=AIC,
+    column type=r,
+    fixed,
+    precision=3
+  },
+  every head row/.style={before row=\hline,after row=\hline},
+  every last row/.style={after row=\hline}
+]{../hw4_code/output/lsp_var_aic_compare.csv}
+\end{table}
+
+
+
+\section{Final Model}
+
+\subsection{Model specification}
+
+The final model formulation is as follows:
+
+\begin{multline}
+\label{eq:final-model}
+Y_{i} = \beta_{0} + I(TG_i = bud)\,visit_{i}\beta_{visit \times bud}
++ I(TG_i = bud)\,(visit_{i} - 60)_{+}\beta_{visit \times bud}^{sp}\\
++ I(TG_i = ned)\,visit_{i}\beta_{visit \times ned} 
++ I(TG_i = ned)\,(visit_{i} - 60)_{+}\beta_{visit \times ned}^{sp} \\
+{}+ I(TG_i = plbo)\,visit_{i}\beta_{visit \times plbo}
++ I(TG_i = plbo)\,(visit_{i} - 60)_{+}\beta_{visit \times plbo}^{sp}\\
++ age\_rz_{i}\,\beta_{age\_rz}
++ I(gender_{i} = m)\,\beta_{gender}\\
+{}+ I(ethnic_{i} = b)\,\beta_{ethnic:black}
++ I(ethnic_{i} = h)\,\beta_{ethnic:hispanic}\\
+{}+ I(ethnic_{i} = o)\,\beta_{ethnic:other})
++ \varepsilon_{i}\\
+\varepsilon_{i} \sim N(0,\Sigma_{TG_i}),
+\end{multline}
+
+where $(x)_{+} = \max(x, 0)$, and
+$\Sigma_{TG_i}$ is a group-specific hetergeneous ANTE covariance matrix.
+The reason for choosing this model is discussed in 
+\cref{sec:Covariance-Model-Selection} and 
+\cref{sec:Mean-Model-Selection}.
+
+
+\subsection{Parameter estimates}
+
+The fixed effect estimates, model-based standard errors,
+t-statistics, degrees of freedom (estimated via Between-Within method),
+p-value, and 95\% confidence intervals are reported
+in \cref{tab:parameter-estimates}.
+
+\begin{table}[htbp]
+\caption{Parameter estimates of the final model}
+\label{tab:parameter-estimates}
+\centering
+\resizebox{\textwidth}{!}{%
+\pgfplotstabletypeset[
+  col sep=comma,
+  header=false,
+  skip first n=1,
+  text indicator=",
+  columns={0,1,2,3,4,5,6},
+  columns/0/.style={column name=Effect,verb string type},
+  columns/1/.style={column name=Estimate,column type=r,fixed,precision=3},
+  columns/2/.style={column name=SE,column type=r,fixed,precision=3},
+  columns/3/.style={column name=t,column type=r,fixed,precision=3},
+  columns/4/.style={column name=DF,column type=r,fixed,precision=1},
+  columns/5/.style={column name=p-value,column type=r,string type},
+  columns/6/.style={column name=95\% CI,string type},
+  every head row/.style={before row=\hline,after row=\hline},
+  every last row/.style={after row=\hline}
+]{../hw4_code/output/effect_table.csv}%
+}
+\end{table}
+
+The estimated covariance matrices for each treatment group
+are reported in \cref{tab:covariance-matrix-budesonide},
+\cref{tab:covariance-matrix-nedocromil}, and
+\cref{tab:covariance-matrix-placebo}.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Estimated covariance matrix under the final model (Budesonide)}
+  \label{tab:covariance-matrix-budesonide}
+  \begingroup\let\small\scriptsize\makebox[\textwidth][c]{\input{../hw4_code/output/fit_covariance_matrix_budesonide.tex}}\endgroup
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Estimated covariance matrix under the final model (Nedocromil)}
+  \label{tab:covariance-matrix-nedocromil}
+  \begingroup\let\small\scriptsize\makebox[\textwidth][c]{\input{../hw4_code/output/fit_covariance_matrix_nedocromil.tex}}\endgroup
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Estimated covariance matrix under the final model (Placebo)}
+  \label{tab:covariance-matrix-placebo}
+  \begingroup\let\small\scriptsize\makebox[\textwidth][c]{\input{../hw4_code/output/fit_covariance_matrix_placebo.tex}}\endgroup
+\end{table}
+
+\subsubsection{Hypothesis testing}
+
+Instead of interpreting the key parameters, we performed a test of
+parallelism, with 
+$H_0: \beta_{visit \times bud} = \beta_{visit \times ned} = \beta_{visit \times plbo}$
+and $\beta_{visit \times bud}^{sp} = \beta_{visit \times ned}^{sp} = \beta_{visit \times plbo}^{sp}$
+versus $H_1: \text{at least one of these equalities fails}$.
+The F statistic is 2.87, and the p-value is 0.022,
+which indicates a significant result. Thus we reject
+the null hypothesis and conclude that mean PostBD FEV1 changes
+differently over visit time among the three treatment groups.
+
+\section{Visualization and Interpretation}
+
+\subsection{Visualization}
+
+The observed PostBD FEV1 means along with fitted PostBD FEV1 means
+for each treatment group over time are illustrated
+in \cref{fig:fitted-observed-mean-compare}. 
+The handling of covariates was consistent with
+that in Assigment 3.
+The model shows an adequate fit to the data.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.9\textwidth]{../hw4_code/output/fitted_observed_mean_compare.png}
+  \caption{Observed and fitted mean trajectories by treatment group.}
+  \label{fig:fitted-observed-mean-compare}
+\end{figure}
+
+
+
+\subsection{Summary}
+
+First, we compared five candidate correlation structures
+using a saturated mean model with covariate adjustment
+and homogneneous variance. We selected ANTE based
+on AIC. Then we compared four variance-covariance structures,
+fixing ANTE and the mean structure. We selected
+heterogeneous variance over time with
+group-specific ANTE covariance matrix based on AIC.
+Next, fixing the covariance structure,
+we compared four
+candidate mean structures. We selected the
+linear spline model (knot = 60) based on AIC, BIC,
+and interpretability. Then we verified that 
+the covariance structure we chose initially
+continued to provide the most adequate fit
+under the linear spline model.
+
+The final model is a linear spline model
+with group-specific heterogeneous ANTE covariance matrix.
+We performed an F-test of parallelism,
+and we find that mean PostBD FEV1
+changes differently over time among
+the three treatment groups (p = 0.022).
+
+\section{Code Availability}
+
+The code is available at
+\url{https://github.com/CHENGHAO-WANG/767_homework/tree/main/hw4_code}
+
+\end{document}
