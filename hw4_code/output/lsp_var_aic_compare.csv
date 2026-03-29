@@ -1,0 +1,5 @@
+model,dof,logLik,AIC
+Heterogeneous variance with group-specific covariance,105,1309.34067920022,-2408.68135840045
+Heterogeneous variance,43,1231.55353165217,-2377.10706330433
+Homogeneous variance with group-specific covariance,60,1111.63951926454,-2103.27903852907
+Homogeneous variance,28,1054.38663738489,-2052.77327476978
