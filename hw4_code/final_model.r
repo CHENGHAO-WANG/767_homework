@@ -1,7 +1,7 @@
 library(tidyverse)
 library(mmrm)
 
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 setwd("./hw4_code")
 
 dat <- read.csv("../data/data_tidy.csv", na.strings = c("", "NA"))
@@ -49,7 +49,7 @@ fit <- mmrm(
     PostBD_FEV ~ 1 + TG:visitc + TG:visitc.sp + age_rz + gender + ethnic + adh(visitc_f | TG / id),
     data = dat2,
     control = mmrm_ctrl_group,
-    reml = FALSE
+    reml = TRUE
 )
 
 
