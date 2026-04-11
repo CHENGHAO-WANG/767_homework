@@ -1,0 +1,349 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{textcomp}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{longtable}
+\usepackage[capitalise]{cleveref}
+\usepackage{caption}
+\pgfplotsset{compat=1.18}
+\captionsetup[table]{position=top,justification=raggedright,singlelinecheck=false}
+\captionsetup[longtable]{position=top,justification=raggedright,singlelinecheck=false}
+\captionsetup[figure]{justification=raggedright,singlelinecheck=false}
+\setlength\LTleft{0pt}
+\setlength\LTright{0pt}
+\setlength\LTcapwidth{\textwidth}
+\pgfplotstableset{
+  show variable once/.style={
+    columns/variable/.style={
+      string type,
+      column name=Variable,
+      postproc cell content/.code={
+        \pgfkeysgetvalue{/pgfplots/table/@cell content}{\cellcontent}
+        \edef\currentvar{\cellcontent}
+        \ifx\currentvar\lastvar
+          \pgfkeyssetvalue{/pgfplots/table/@cell content}{}
+        \else
+          \ifnum\pgfplotstablerow>0
+            \pgfkeyssetevalue{/pgfplots/table/@cell content}{\noexpand\hline\space\cellcontent}
+          \fi
+          \xdef\lastvar{\currentvar}
+        \fi
+      }
+    }
+  }
+}
+\def\lastvar{}
+\setlength{\parskip}{0.8em}
+\setlength{\parindent}{0pt}
+\newcommand{\indep}{\perp \!\!\! \perp}%\renewcommand{\thesubsection}{\thesection.\alph{subsection}}
+
+\title{\Large\bfseries ASSIGNMENT 5: LINEAR MIXED EFFECTS MODEL}
+\author{Chenghao Wang}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Model Specification and Fitting}
+
+\subsection{Model formulation}
+
+The model formulation is as follows:
+
+\begin{multline}
+\label{eq:final-model}
+Y_{i} = \beta_{0} + I(TG_i = bud)\,visit_{i}\beta_{visit \times bud}
++ I(TG_i = ned)\,visit_{i}\beta_{visit \times ned} \\
+{}+ I(TG_i = plbo)\,visit_{i}\beta_{visit \times plbo}
++ age\_rz_{i}\,\beta_{age\_rz}
++ I(gender_{i} = m)\,\beta_{gender}\\
+{}+ I(ethnic_{i} = b)\,\beta_{ethnic:black}
++ I(ethnic_{i} = h)\,\beta_{ethnic:hispanic}
+{}+ I(ethnic_{i} = o)\,\beta_{ethnic:other} \\
++ b_{0,i} + visit_i b_{1,i} + \varepsilon_{i}\\
+(b_{0,i}, b_{1,i})^T \equiv b_i \sim N(0, D),\,
+\varepsilon_{i} \sim N(0,\sigma^2_{TG_i}I).
+\end{multline}
+
+The fixed effects include intercept (at baseline), visit time
+(three group-specific slopes), age at randomization, gender,
+and ethnicity. The random effects include subject-specific random intercept
+and subject-specific random slope for visit time.
+
+We assume that $b_i \indep \varepsilon_i$.
+In addition, we assume that the covariance matrix of $b_i$
+is an unstructured matrix, and the covariance matrix of
+$\varepsilon_i$ is a diagonal matrix with group-specific variances.
+
+\subsection{Random effects structure}
+
+A random effects structure with both random intercept and
+random slope for visit time is chosen,
+to account for the subject-level variability in
+both the baseline outcome and the rate of change over visit time,
+as we assume that the visit time effect is linear
+in the fixed effects structure.
+This is also justified because the measurements
+were taken at multiple time points for each subject,
+and thus it is reasonable to expect subject-specific trajectories.
+
+R package \texttt{nlme} was used.
+The model was fitted using REML.
+The fixed effect estimates are demonstrated in \cref{tab:effect-table}.
+The variance component estimates are shown in \cref{tab:random-effect-covariance}
+and \cref{tab:residual-variance-group}.
+
+
+
+\begin{table}[htbp]
+\caption{Estimated fixed effects from the fitted mixed model.}
+\centering
+\pgfplotstabletypeset[
+  col sep=comma,
+  string replace*={"}{},
+  display columns/0/.style={string type, column name=Effect, column type=l},
+  display columns/1/.style={column name=Estimate, column type=r, fixed, precision=3},
+  display columns/2/.style={column name=SE, column type=r, fixed, precision=4},
+  display columns/3/.style={column name=Test statistic, column type=r},
+  display columns/4/.style={string type, column name=\textit{p}-value, column type=r},
+  every head row/.style={before row=\hline, after row=\hline},
+  every last row/.style={after row=\hline}
+]{../hw5_code/output/effect_table.csv}
+\label{tab:effect-table}
+\end{table}
+
+\begin{table}[htbp]
+\caption{Estimated random-effects covariance matrix.}
+\centering
+\pgfplotstabletypeset[
+  col sep=comma,
+  string replace*={"}{},
+  display columns/0/.style={string type, column name=Random effect, column type=l},
+  display columns/1/.style={column name=(Intercept), column type=r, fixed, precision=6},
+  display columns/2/.style={column name=visitc, column type=r, fixed, precision=6},
+  every head row/.style={before row=\hline, after row=\hline},
+  every last row/.style={after row=\hline}
+]{../hw5_code/output/random_effect_covariance_matrix.csv}
+\label{tab:random-effect-covariance}
+\end{table}
+
+\begin{table}[htbp]
+\caption{Estimated residual variance by treatment group.}
+\centering
+\pgfplotstabletypeset[
+  col sep=comma,
+  string replace*={"}{},
+  display columns/0/.style={string type, column name=Treatment group, column type=l},
+  display columns/1/.style={column name=Residual variance, column type=r, fixed, precision=5},
+  every head row/.style={before row=\hline, after row=\hline},
+  every last row/.style={after row=\hline}
+]{../hw5_code/output/residual_variance_by_group.csv}
+\label{tab:residual-variance-group}
+\end{table}
+
+
+
+\section{Evaluating the Random Effects}
+
+\subsection{Testing random effects}
+
+First, we evaluated the need for the random slope for visit time.
+We compared the full model with a reduced model without
+the random slope for visit time.
+The likelihood ratio test (LRT) statistic is 3691.1,
+and the p-value is < 0.001 (The null distribution
+is $.5 \chi_{1}^2 + .5 \chi_{2}^2$.),
+which indicates that the random slope for visit time is needed.
+Next, we evaluated the need for the random intercept
+by comparing the full model with a reduced model
+without the random intercept. The LRT statistic is
+10092.1, and the p-value is < 0.001,
+which suggest that the random intercept is also needed.
+
+We also evaluated the need for the random effects
+using AIC.
+As shown in \cref{tab:aic-comparison-random-effects},
+the model with both random intercept and random slope for visit time
+has the lowest AIC, which also supports the choice of the random effects
+structure.
+
+\begin{table}[htbp]
+\caption{AIC comparison for random-effects structures.}
+\centering
+\pgfplotstabletypeset[
+  col sep=comma,
+  string replace*={"}{},
+  display columns/0/.style={string type, column name=Model, column type=l},
+  display columns/1/.style={column name=DF, column type=r},
+  display columns/2/.style={column name=AIC, column type=r, fixed, precision=1},
+  every head row/.style={before row=\hline, after row=\hline},
+  every last row/.style={after row=\hline}
+]{../hw5_code/output/aic_comparison.csv}
+\label{tab:aic-comparison-random-effects}
+\end{table}
+
+
+
+
+\subsection{Variance components interpretation}
+
+Under the model we specified,
+if we express $D$ as
+\begin{equation}
+D = \begin{bmatrix}
+\tau_{00} & \tau_{01} \\
+\tau_{10} & \tau_{11}
+\end{bmatrix},
+\end{equation}
+
+then the $(j, k)$ element of $Cov(Y_i)$ is as follows:
+
+\begin{equation}
+\tau_{00} + (visit_{ij} + visit_{ik})\tau_{01} + visit_{ij} visit_{ik}
+\tau_{11} + I(j = k)\sigma^2_{TG_i}.
+\end{equation}
+
+This intuitively shows the contribution of the variance components.
+Since the estimate of $\tau_{01}$ is positive,
+we can tell that the variance of $Y_{ij}$
+increases as visit time increases;
+the covariance between $Y_{ij}$ and $Y_{ik}$ also increases
+as visit time increases, which is consistent with
+our observation in the previous Assignments.
+Nonetheless, the characteristic that
+the covariance between two measurements decreases as the
+lag increases is not correctly modeled by this model.
+
+The estimated variance components ($\hat{D}$) tells
+us about the between-subject variability in the data.
+
+\section{Subject-Specific Predictions}
+\subsection{EBLUPs}
+
+The empirical BLUPs (EBLUPs) for each subject
+are displayed in \cref{fig:random-intercept-histogram}
+and \cref{fig:random-slope-histogram}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.75\textwidth]{../hw5_code/output/random_intercept_histogram.png}
+\caption{Histogram of EBLUPs for the random intercept.}
+\label{fig:random-intercept-histogram}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.75\textwidth]{../hw5_code/output/random_slope_histogram.png}
+\caption{Histogram of EBLUPs for the random slope of visit time.}
+\label{fig:random-slope-histogram}
+\end{figure}
+
+
+\subsection{Subject-specific trajectories}
+
+The subject-specific observed and fitted trajectories 
+are illustrated in \cref{fig:subject-specific-trajectories},
+for a subset of subjects. The fitted trajectories
+were obtained by using both fixed effect estimates and EBLUPs.
+The model captures individual patterns reasonably well.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{../hw5_code/output/subject_specific_trajectory_plot.png}
+\caption{Subject-specific predicted trajectories from the fitted mixed model.}
+\label{fig:subject-specific-trajectories}
+\end{figure}
+
+
+\section{Residual and Influence Diagnostics}
+\subsection{Residual analysis}
+
+The R-P plot made using \texttt{nlme} package
+is shown as \cref{fig:fit-diagnostic-plot}.
+Although the vertical axis label shows "Standardized residuals",
+the residuals plotted are actually the Pearson residuals
+(The Pearson residuals are defined as 
+$(y_{ij} - \hat{y}_{ij})/\sqrt{\widehat{Var}(y_{ij})}$,
+while the standardized residuals are defined as
+$(y_{ij} - \hat{y}_{ij})/\sqrt{\widehat{Var}(y_{ij} - \hat{y}_{ij})}$,
+where $\hat{y}_{ij}$ is estimated using both fixed effect estimates
+and EBLUPs). We find that the distribution of the Pearson residuals is approximately
+symmetric. However, the dispersion of them increases as the fitted value
+increases. The fitted values were also computed using both
+fixed effect estimates and EBLUPs. Note that the fitted value
+increases as visit time increases, and in Assignment 3, we showed
+that the variance increases over time until month 60, and then tends to
+be constant. Thus, we conclude that our model does not perfectly
+capture the time-variance trend.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{../hw5_code/output/fit_diagnostic_plot.png}
+\caption{Residual diagnostic plots for the fitted linear mixed model.}
+\label{fig:fit-diagnostic-plot}
+\end{figure}
+
+
+\subsection{Influence diagnostics}
+
+The subject-level Cook's distance is illustrated
+in \cref{fig:subject-level-cooks-distance}, where
+the subjects are ordered by Cook's distance.
+When computing the Cook's distance,
+models were refitted with a limit of the number of
+maximum iterations being set, for computational efficiency.
+We find that there are two subjects (id 803 and id 345) with markedly larger
+Cook's distance than the others.
+These two subjects warrant further investigation.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{../hw5_code/output/subject_level_cooks_distance.png}
+\caption{Subject-level Cook's distance for the fitted linear mixed model.}
+\label{fig:subject-level-cooks-distance}
+\end{figure}
+
+
+\section{Summary and Interpretation}
+
+We fit a linear mixed effects model, including
+a random intercept and a random slope for visit time.
+The model's fixed effect structure includes
+an intercept and three group-specific slopes for visit time,
+and it adjusts for age at randomization, gender,
+and ethnicity.
+
+We performed a test of parallelism,
+with $H_0: \beta_{visit \times bud} = \beta_{visit \times ned} = \beta_{visit \times plbo}$
+versus $H_1: \text{at least one of these equalities fails}$.
+The Wald $\chi^2$ statistic is 5.82,
+and the p-value is 0.071, which indicates an insignificant
+result. Thus we do not reject the null and conclude
+that mean PostBD FEV1 does not change differently
+over visit time among the three treatment groups.
+
+We have shown that this model does not
+perfectly capture the time-variance trend by R-P plot.
+We tried to fit a model with heterogeneous residual variance
+across visit time, but the model did not converge.
+Besides, this model also does not
+capture the characteristic that the covariance between two measurements
+decreases as the lag increases.
+Moreover, we find two influential subjects
+that warrant further investigation.
+
+\section{Code Availability}
+
+The code is available at
+\url{https://github.com/CHENGHAO-WANG/767_homework/tree/main/hw5_code}.
+
+
+\end{document}
