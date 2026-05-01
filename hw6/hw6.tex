@@ -1,0 +1,55 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{textcomp}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{longtable}
+\usepackage[capitalise]{cleveref}
+\usepackage{caption}
+\pgfplotsset{compat=1.18}
+\captionsetup[table]{position=top,justification=raggedright,singlelinecheck=false}
+\captionsetup[longtable]{position=top,justification=raggedright,singlelinecheck=false}
+\captionsetup[figure]{justification=raggedright,singlelinecheck=false}
+\setlength\LTleft{0pt}
+\setlength\LTright{0pt}
+\setlength\LTcapwidth{\textwidth}
+\pgfplotstableset{
+  show variable once/.style={
+    columns/variable/.style={
+      string type,
+      column name=Variable,
+      postproc cell content/.code={
+        \pgfkeysgetvalue{/pgfplots/table/@cell content}{\cellcontent}
+        \edef\currentvar{\cellcontent}
+        \ifx\currentvar\lastvar
+          \pgfkeyssetvalue{/pgfplots/table/@cell content}{}
+        \else
+          \ifnum\pgfplotstablerow>0
+            \pgfkeyssetevalue{/pgfplots/table/@cell content}{\noexpand\hline\space\cellcontent}
+          \fi
+          \xdef\lastvar{\currentvar}
+        \fi
+      }
+    }
+  }
+}
+\def\lastvar{}
+\setlength{\parskip}{0.8em}
+\setlength{\parindent}{0pt}
+\newcommand{\indep}{\perp \!\!\! \perp}
+
+\title{\Large\bfseries ASSIGNMENT 6}
+\author{Chenghao Wang}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\end{document}
