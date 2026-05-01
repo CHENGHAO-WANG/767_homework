@@ -44,12 +44,200 @@
 \setlength{\parindent}{0pt}
 \newcommand{\indep}{\perp \!\!\! \perp}
 
-\title{\Large\bfseries ASSIGNMENT 6}
+\title{\Large\bfseries ASSIGNMENT 6: MARGINAL MODELS (GEE)}
 \author{Chenghao Wang}
 \date{\today}
 
 \begin{document}
 
 \maketitle
+
+\section{Model Specification}
+
+\subsection{Outcome and link function}
+
+The outcome is pre-bronchodilator FFB status, \texttt{PreBD\_FFB}.
+We define a binary outcome
+\[
+Y_{ij} = I(\texttt{PreBD\_FFB}_{ij} = \text{obstruction}),
+\]
+where $Y_{ij}=1$ indicates obstruction for subject $i$ at visit $j$.
+Because the outcome is binary, we use a logit link and Bernoulli variance
+function:
+\[
+\mathrm{logit}(\mu_{ij}) =
+\log\left(\frac{\mu_{ij}}{1-\mu_{ij}}\right), \qquad
+\mathrm{Var}(Y_{ij}) = \mu_{ij}(1-\mu_{ij}).
+\]
+Here $\mu_{ij}=P(Y_{ij}=1)$ is the marginal probability of obstruction.
+This model gives population-averaged effects on the log odds of obstruction.
+
+\subsection{Mean model}
+
+The marginal mean model is
+\begin{equation}
+\mathrm{logit}(\mu_{ij})
+= \beta_0 + TG_i + visit_j + TG_i:visit_j
++ age\_rz_i + gender_i + ethnic_i.
+\end{equation}
+
+Treatment group, visit, gender, and ethnicity are modeled as categorical
+variables, and age at randomization is modeled as a continuous covariate.
+The treatment-by-visit interaction allows the population-averaged trajectory
+of obstruction to differ by treatment group.
+Rather than listing all coefficients separately, the model contains an
+intercept, treatment contrasts, visit indicators, treatment-by-visit
+interactions, age, gender, and ethnicity contrasts.
+
+Before fitting the model, time points with more than 75\% missingness in
+\texttt{PreBD\_FFB} were removed. These were visits 44, 56, 64, and 120.
+The observed logits before and after removing these visits are shown in
+\cref{fig:prebd-ffb-logit-all,fig:prebd-ffb-logit-le75}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{../hw6_code/output/prebd_ffb_logit_by_tg_visitc.png}
+\caption{Observed logit of pre-bronchodilator obstruction by treatment group and visit.}
+\label{fig:prebd-ffb-logit-all}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{../hw6_code/output/prebd_ffb_logit_by_tg_visitc_missingness_le75.png}
+\caption{Observed logit of pre-bronchodilator obstruction after removing visits with more than 75\% missingness.}
+\label{fig:prebd-ffb-logit-le75}
+\end{figure}
+
+\section{Working Correlation Structure}
+
+\subsection{Fitting the model}
+
+The GEE model was fitted using independence and AR(1) working correlation
+structures. The coefficient estimates from both fits are shown in
+\cref{tab:gee-parameter-estimates}.
+
+\begingroup
+\small
+\pgfplotstabletypeset[
+  col sep=comma,
+  string replace*={"}{},
+  string replace*={_}{\_},
+  begin table=\begin{longtable},
+  end table=\end{longtable},
+  every head row/.style={
+    before row={\caption{GEE coefficient estimates under independence and AR(1) working correlation structures.}\label{tab:gee-parameter-estimates}\\\hline},
+    after row=\hline
+  },
+  every last row/.style={after row=\hline},
+  display columns/0/.style={string type, column name=Parameter, column type=p{0.46\textwidth}},
+  display columns/1/.style={column name=Independence, column type=r, fixed, precision=3},
+  display columns/2/.style={column name=AR(1), column type=r, fixed, precision=3}
+]{../hw6_code/output/gee_parameter_estimates.csv}
+\endgroup
+
+\subsection{Comparing structures}
+
+The parameter estimates were broadly similar under the two working correlation
+structures. The independence model had QIC 7674.83, while the AR(1) model had
+QIC 7693.54. Since smaller QIC is preferred, the independence working
+correlation was selected for the remaining inference.
+
+\section{Variance Estimation}
+
+\subsection{Comparison}
+
+For the selected independence working correlation structure, the model-based
+and sandwich standard errors are shown in \cref{tab:gee-se-comparison}.
+
+\begingroup
+\small
+\pgfplotstabletypeset[
+  col sep=comma,
+  string replace*={"}{},
+  string replace*={_}{\_},
+  begin table=\begin{longtable},
+  end table=\end{longtable},
+  every head row/.style={
+    before row={\caption{Model-based and sandwich standard errors for the independence GEE fit.}\label{tab:gee-se-comparison}\\\hline},
+    after row=\hline
+  },
+  every last row/.style={after row=\hline},
+  display columns/0/.style={string type, column name=Parameter, column type=p{0.46\textwidth}},
+  display columns/1/.style={column name=Model-based SE, column type=r, fixed, precision=3},
+  display columns/2/.style={column name=Sandwich SE, column type=r, fixed, precision=3}
+]{../hw6_code/output/gee_independence_se_comparison.csv}
+\endgroup
+
+\subsection{Interpretation}
+
+Some sandwich standard errors differ materially from the model-based standard
+errors, especially for baseline covariates such as age, gender, and ethnicity.
+This suggests that the model-based variance may be sensitive to assumptions
+about the working covariance. I use the sandwich standard errors for inference
+because they are robust to misspecification of the working correlation in GEE.
+
+\section{Hypothesis Testing and Interpretation}
+
+\subsection{Hypothesis test}
+
+To evaluate whether the population-averaged obstruction trajectory differs by
+treatment group, we tested
+\[
+H_0:\ \text{all treatment-by-visit interaction coefficients are zero}
+\]
+against the alternative that at least one treatment-by-visit interaction is
+nonzero. The Wald test result is shown in \cref{tab:parallel-test}.
+
+\begin{table}[htbp]
+\caption{Wald test for treatment-by-visit interaction terms.}
+\centering
+\pgfplotstabletypeset[
+  col sep=comma,
+  string replace*={"}{},
+  string replace*={_}{\_},
+  display columns/0/.style={string type, column name=Working correlation, column type=l},
+  display columns/1/.style={string type, column name=Hypothesis, column type=p{0.34\textwidth}},
+  display columns/2/.style={column name=DF, column type=r},
+  display columns/3/.style={column name=Wald $\chi^2$, column type=r, fixed, precision=2},
+  display columns/4/.style={column name=\textit{p}-value, column type=r, fixed, precision=3},
+  every head row/.style={before row=\hline, after row=\hline},
+  every last row/.style={after row=\hline}
+]{../hw6_code/output/gee_parallel_trajectory_test.csv}
+\label{tab:parallel-test}
+\end{table}
+
+The Wald statistic is 46.55 with 30 degrees of freedom, and the p-value is
+0.028. Thus, we reject the null hypothesis at the 0.05 level and conclude that
+the population-averaged obstruction trajectories differ by treatment group.
+
+\subsection{Interpretation of effects}
+
+For this binary outcome with a logit link, exponentiated coefficients would be
+interpreted as population-averaged odds ratios. However, because the mean model
+uses categorical visit indicators and many treatment-by-visit interactions, the
+individual key parameter estimates are hard to interpret directly. The more
+useful interpretation is the global evidence of different treatment trajectories
+and the observed logit patterns in
+\cref{fig:prebd-ffb-logit-all,fig:prebd-ffb-logit-le75}.
+
+\section{Summary}
+
+We fit a marginal logistic regression model using GEE for the probability of
+pre-bronchodilator obstruction. The model included treatment group, visit,
+treatment-by-visit interactions, age at randomization, gender, and ethnicity.
+After comparing independence and AR(1) working correlation structures using QIC,
+we selected the independence structure.
+
+There is evidence that the population-averaged obstruction trajectory differs by
+treatment group. The model is useful for estimating marginal treatment-group
+patterns, but it has limitations. It does not provide subject-specific effects,
+some visits were removed because of high missingness, and the categorical visit
+interaction model has many parameters, which makes individual coefficient
+interpretation difficult.
+
+\section{Code Availability}
+
+The code is available at
+\url{https://github.com/CHENGHAO-WANG/767_homework/tree/main/hw6_code}.
 
 \end{document}
