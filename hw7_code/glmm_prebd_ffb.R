@@ -178,6 +178,42 @@ write.csv(
     quote = TRUE
 )
 
+interaction_terms <- grep(
+    ":visitc_f",
+    names(lme4::fixef(fit_glmm)),
+    value = TRUE
+)
+coef_covariance <- as.matrix(vcov(fit_glmm))
+interaction_estimates <- lme4::fixef(fit_glmm)[interaction_terms]
+interaction_covariance <- coef_covariance[interaction_terms, interaction_terms]
+parallel_wald_chisq <- as.numeric(
+    t(interaction_estimates) %*%
+        solve(interaction_covariance, interaction_estimates)
+)
+parallel_p_value <- pchisq(
+    parallel_wald_chisq,
+    df = length(interaction_terms),
+    lower.tail = FALSE
+)
+parallel_trajectory_test <- data.frame(
+    hypothesis = "All TG-by-visit interaction coefficients are zero",
+    df = length(interaction_terms),
+    wald_chisq = parallel_wald_chisq,
+    p_value = ifelse(
+        parallel_p_value < 0.001,
+        "<0.001",
+        formatC(parallel_p_value, format = "f", digits = 3)
+    ),
+    row.names = NULL
+)
+
+write.csv(
+    parallel_trajectory_test,
+    file.path(output_dir, "glmm_parallel_trajectory_test.csv"),
+    row.names = FALSE,
+    quote = TRUE
+)
+
 variance_components <- as.matrix(lme4::VarCorr(fit_glmm)$id)
 
 write.csv(
