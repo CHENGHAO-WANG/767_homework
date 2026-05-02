@@ -5,6 +5,13 @@ if (!requireNamespace("lme4", quietly = TRUE)) {
         call. = FALSE
     )
 }
+if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop(
+        "Package 'ggplot2' is required for plotting. ",
+        "Install it with install.packages('ggplot2') and rerun this script.",
+        call. = FALSE
+    )
+}
 
 script_path <- normalizePath(
     sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)[1]),
@@ -264,35 +271,61 @@ write.csv(
     quote = TRUE
 )
 
-png(
-    file.path(output_dir, "glmm_random_intercept_histogram.png"),
-    width = 900,
-    height = 600
-)
-hist(
+random_intercept_breaks <- hist(
     random_effect_predictions$random_intercept,
     breaks = "FD",
-    col = "steelblue",
-    border = "white",
-    xlab = "Predicted random intercept",
-    main = "Predicted Random Intercepts by Subject"
+    plot = FALSE
+)$breaks
+random_intercept_plot <- ggplot2::ggplot(
+    random_effect_predictions,
+    ggplot2::aes(x = random_intercept)
+) +
+    ggplot2::geom_histogram(
+        breaks = random_intercept_breaks,
+        fill = "steelblue",
+        color = "white"
+    ) +
+    ggplot2::labs(
+        title = "Predicted Random Intercepts by Subject",
+        x = "Predicted random intercept",
+        y = "Count"
+    ) +
+    ggplot2::theme_bw()
+ggplot2::ggsave(
+    filename = file.path(output_dir, "glmm_random_intercept_histogram.png"),
+    plot = random_intercept_plot,
+    width = 9,
+    height = 6,
+    dpi = 100
 )
-dev.off()
 
-png(
-    file.path(output_dir, "glmm_random_slope_histogram.png"),
-    width = 900,
-    height = 600
-)
-hist(
+random_slope_breaks <- hist(
     random_effect_predictions$random_slope,
     breaks = "FD",
-    col = "darkorange",
-    border = "white",
-    xlab = "Predicted random slope for visitc",
-    main = "Predicted Random Slopes by Subject"
+    plot = FALSE
+)$breaks
+random_slope_plot <- ggplot2::ggplot(
+    random_effect_predictions,
+    ggplot2::aes(x = random_slope)
+) +
+    ggplot2::geom_histogram(
+        breaks = random_slope_breaks,
+        fill = "darkorange",
+        color = "white"
+    ) +
+    ggplot2::labs(
+        title = "Predicted Random Slopes by Subject",
+        x = "Predicted random slope for visitc",
+        y = "Count"
+    ) +
+    ggplot2::theme_bw()
+ggplot2::ggsave(
+    filename = file.path(output_dir, "glmm_random_slope_histogram.png"),
+    plot = random_slope_plot,
+    width = 9,
+    height = 6,
+    dpi = 100
 )
-dev.off()
 
 set.seed(767)
 subject_profiles <- dat_model[
@@ -362,47 +395,33 @@ write.csv(
     quote = TRUE
 )
 
-plot_tg <- levels(droplevels(selected_subject_probabilities$TG))
-plot_colors <- c("steelblue", "darkorange", "forestgreen", "purple")
-png(
-    file.path(output_dir, "glmm_selected_subject_probabilities.png"),
-    width = 900,
-    height = 900
+selected_subject_plot_data <- selected_subject_probabilities
+selected_subject_plot_data$id <- droplevels(selected_subject_plot_data$id)
+selected_subject_plot_data$TG <- droplevels(selected_subject_plot_data$TG)
+selected_subject_plot <- ggplot2::ggplot(
+    selected_subject_plot_data,
+    ggplot2::aes(
+        x = visitc,
+        y = predicted_probability,
+        color = id,
+        group = id
+    )
+) +
+    ggplot2::geom_line(linewidth = 0.8) +
+    ggplot2::geom_point(size = 2.2) +
+    ggplot2::facet_wrap(ggplot2::vars(TG), ncol = 1) +
+    ggplot2::coord_cartesian(ylim = c(0, 1)) +
+    ggplot2::labs(
+        title = "Subject-Specific Predicted Probabilities by Treatment Group",
+        x = "Visit",
+        y = "Predicted probability",
+        color = "Subject id"
+    ) +
+    ggplot2::theme_bw()
+ggplot2::ggsave(
+    filename = file.path(output_dir, "glmm_selected_subject_probabilities.png"),
+    plot = selected_subject_plot,
+    width = 9,
+    height = 9,
+    dpi = 100
 )
-old_par <- par(mfrow = c(length(plot_tg), 1), mar = c(4, 4, 3, 1))
-for (tg_value in plot_tg) {
-    tg_probabilities <- selected_subject_probabilities[
-        selected_subject_probabilities$TG == tg_value,
-    ]
-    tg_subjects <- unique(tg_probabilities$id)
-    plot(
-        NA,
-        xlim = range(tg_probabilities$visitc),
-        ylim = c(0, 1),
-        xlab = "Visit",
-        ylab = "Predicted probability",
-        main = paste("Subject-Specific Predicted Probabilities:", tg_value)
-    )
-    for (subject_index in seq_along(tg_subjects)) {
-        subject_probabilities <- tg_probabilities[
-            tg_probabilities$id == tg_subjects[subject_index],
-        ]
-        lines(
-            subject_probabilities$visitc,
-            subject_probabilities$predicted_probability,
-            type = "b",
-            pch = 19,
-            col = plot_colors[subject_index]
-        )
-    }
-    legend(
-        "topright",
-        legend = paste("id", tg_subjects),
-        col = plot_colors[seq_along(tg_subjects)],
-        lty = 1,
-        pch = 19,
-        bty = "n"
-    )
-}
-par(old_par)
-dev.off()

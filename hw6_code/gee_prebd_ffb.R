@@ -10,6 +10,13 @@ if (!requireNamespace("geepack", quietly = TRUE)) {
         call. = FALSE
     )
 }
+if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop(
+        "Package 'ggplot2' is required for plotting. ",
+        "Install it with install.packages('ggplot2') and rerun this script.",
+        call. = FALSE
+    )
+}
 
 output_dir <- "output"
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
@@ -107,40 +114,32 @@ write.csv(
     quote = TRUE
 )
 
-plot_tg <- sort(unique(logit_by_tg_visitc$TG))
-plot_colors <- c("steelblue", "darkorange", "forestgreen")[seq_along(plot_tg)]
-png(
-    file.path(output_dir, "prebd_ffb_logit_by_tg_visitc.png"),
-    width = 900,
-    height = 600
-)
-plot(
-    NA,
-    xlim = range(logit_by_tg_visitc$visitc),
-    ylim = range(logit_by_tg_visitc$logit_obstruction_prob, na.rm = TRUE),
-    xlab = "Visit",
-    ylab = "logit(P(PreBD_FFB = obstruction))",
-    main = "Observed Logit of Obstruction by Treatment Group and Visit"
-)
-for (tg_index in seq_along(plot_tg)) {
-    tg_data <- logit_by_tg_visitc[logit_by_tg_visitc$TG == plot_tg[tg_index], ]
-    lines(
-        tg_data$visitc,
-        tg_data$logit_obstruction_prob,
-        type = "b",
-        pch = 19,
-        col = plot_colors[tg_index]
+logit_by_tg_visitc$TG <- factor(logit_by_tg_visitc$TG)
+logit_plot <- ggplot2::ggplot(
+    logit_by_tg_visitc,
+    ggplot2::aes(
+        x = visitc,
+        y = logit_obstruction_prob,
+        color = TG,
+        group = TG
     )
-}
-legend(
-    "topright",
-    legend = plot_tg,
-    col = plot_colors,
-    lty = 1,
-    pch = 19,
-    bty = "n"
+) +
+    ggplot2::geom_line(linewidth = 0.8, na.rm = TRUE) +
+    ggplot2::geom_point(size = 2.5, na.rm = TRUE) +
+    ggplot2::labs(
+        title = "Observed Logit of Obstruction by Treatment Group and Visit",
+        x = "Visit",
+        y = "logit(P(PreBD_FFB = obstruction))",
+        color = "TG"
+    ) +
+    ggplot2::theme_bw()
+ggplot2::ggsave(
+    filename = file.path(output_dir, "prebd_ffb_logit_by_tg_visitc.png"),
+    plot = logit_plot,
+    width = 9,
+    height = 6,
+    dpi = 100
 )
-dev.off()
 
 included_visitc <- missingness_by_visitc$visitc[
     missingness_by_visitc$missing_pct <= 75
@@ -156,40 +155,31 @@ write.csv(
     quote = TRUE
 )
 
-png(
-    file.path(output_dir, "prebd_ffb_logit_by_tg_visitc_missingness_le75.png"),
-    width = 900,
-    height = 600
-)
-plot(
-    NA,
-    xlim = range(logit_by_tg_visitc_le75$visitc),
-    ylim = range(logit_by_tg_visitc_le75$logit_obstruction_prob, na.rm = TRUE),
-    xlab = "Visit",
-    ylab = "logit(P(PreBD_FFB = obstruction))",
-    main = "Observed Logit by Treatment Group and Visit, Missingness <= 75%"
-)
-for (tg_index in seq_along(plot_tg)) {
-    tg_data <- logit_by_tg_visitc_le75[
-        logit_by_tg_visitc_le75$TG == plot_tg[tg_index],
-    ]
-    lines(
-        tg_data$visitc,
-        tg_data$logit_obstruction_prob,
-        type = "b",
-        pch = 19,
-        col = plot_colors[tg_index]
+logit_le75_plot <- ggplot2::ggplot(
+    logit_by_tg_visitc_le75,
+    ggplot2::aes(
+        x = visitc,
+        y = logit_obstruction_prob,
+        color = TG,
+        group = TG
     )
-}
-legend(
-    "topright",
-    legend = plot_tg,
-    col = plot_colors,
-    lty = 1,
-    pch = 19,
-    bty = "n"
+) +
+    ggplot2::geom_line(linewidth = 0.8, na.rm = TRUE) +
+    ggplot2::geom_point(size = 2.5, na.rm = TRUE) +
+    ggplot2::labs(
+        title = "Observed Logit by Treatment Group and Visit, Missingness <= 75%",
+        x = "Visit",
+        y = "logit(P(PreBD_FFB = obstruction))",
+        color = "TG"
+    ) +
+    ggplot2::theme_bw()
+ggplot2::ggsave(
+    filename = file.path(output_dir, "prebd_ffb_logit_by_tg_visitc_missingness_le75.png"),
+    plot = logit_le75_plot,
+    width = 9,
+    height = 6,
+    dpi = 100
 )
-dev.off()
 
 required_vars <- c(
     "TG", "id", "age_rz", "gender", "ethnic", "visitc", "PreBD_FFB"
