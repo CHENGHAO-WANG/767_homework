@@ -106,11 +106,11 @@ write.csv(
     quote = TRUE
 )
 
-variance_components <- as.data.frame(lme4::VarCorr(fit_glmm))
+variance_components <- as.matrix(lme4::VarCorr(fit_glmm)$id)
 
 write.csv(
     variance_components,
     file.path(output_dir, "glmm_variance_components.csv"),
-    row.names = FALSE,
+    row.names = TRUE,
     quote = TRUE
 )
