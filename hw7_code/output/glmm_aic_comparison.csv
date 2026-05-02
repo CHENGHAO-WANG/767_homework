@@ -1,5 +1,5 @@
 "model","random_effects","df","AIC"
-"random_intercept_and_slope","(visitc | id)",56,4858.16770495953
-"random_intercept_only","(1 | id)",54,4983.92127444427
-"random_slope_only","(0 + visitc | id)",54,5642.3435740718
+"random_intercept_and_slope","(visitc | id)",56,4858.16770496259
+"random_intercept_only","(1 | id)",54,4983.92127444426
+"random_slope_only","(0 + visitc | id)",54,5642.34357407181
 "fixed_effects_only","none",53,7612.25018896619

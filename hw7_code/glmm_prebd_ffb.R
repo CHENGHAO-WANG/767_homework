@@ -78,7 +78,7 @@ if (!all(c("normal", "obstruction") %in% levels(dat_model$PreBD_FFB))) {
 
 dat_model$PreBD_FFB_binary <- as.integer(dat_model$PreBD_FFB == "obstruction")
 dat_model$id <- factor(dat_model$id)
-dat_model$TG <- factor(dat_model$TG)
+dat_model$TG <- relevel(factor(dat_model$TG), ref = "placebo")
 dat_model$gender <- relevel(factor(dat_model$gender), ref = "female")
 dat_model$ethnic <- relevel(factor(dat_model$ethnic), ref = "white")
 dat_model$visitc <- as.numeric(dat_model$visitc)
@@ -333,8 +333,11 @@ subject_profiles <- dat_model[
     c("id", "TG", "age_rz", "gender", "ethnic")
 ]
 subject_profiles <- subject_profiles[order(subject_profiles$TG, subject_profiles$id), ]
+# Keep seeded subject sampling independent of the TG reference level.
+sample_tg <- sort(unique(as.character(subject_profiles$TG)))
 selected_subject_ids <- unlist(
-    lapply(split(subject_profiles$id, subject_profiles$TG), function(subject_ids) {
+    lapply(sample_tg, function(tg_value) {
+        subject_ids <- subject_profiles$id[subject_profiles$TG == tg_value]
         sample(subject_ids, size = 4)
     }),
     use.names = FALSE

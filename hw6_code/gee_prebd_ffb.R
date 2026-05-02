@@ -114,7 +114,7 @@ write.csv(
     quote = TRUE
 )
 
-logit_by_tg_visitc$TG <- factor(logit_by_tg_visitc$TG)
+logit_by_tg_visitc$TG <- relevel(factor(logit_by_tg_visitc$TG), ref = "placebo")
 logit_plot <- ggplot2::ggplot(
     logit_by_tg_visitc,
     ggplot2::aes(
@@ -196,7 +196,7 @@ if (!all(c("normal", "obstruction") %in% levels(dat_model$PreBD_FFB))) {
 
 dat_model$PreBD_FFB_binary <- as.integer(dat_model$PreBD_FFB == "obstruction")
 dat_model$id <- factor(dat_model$id)
-dat_model$TG <- factor(dat_model$TG)
+dat_model$TG <- relevel(factor(dat_model$TG), ref = "placebo")
 dat_model$gender <- relevel(factor(dat_model$gender), ref = "female")
 dat_model$ethnic <- relevel(factor(dat_model$ethnic), ref = "white")
 dat_model$visitc <- as.numeric(dat_model$visitc)
