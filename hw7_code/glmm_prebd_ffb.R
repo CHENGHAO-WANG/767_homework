@@ -186,3 +186,48 @@ write.csv(
     row.names = TRUE,
     quote = TRUE
 )
+
+random_effect_predictions <- lme4::ranef(fit_glmm)$id
+random_effect_predictions <- data.frame(
+    id = row.names(random_effect_predictions),
+    random_intercept = random_effect_predictions[["(Intercept)"]],
+    random_slope = random_effect_predictions[["visitc"]],
+    row.names = NULL
+)
+
+write.csv(
+    random_effect_predictions,
+    file.path(output_dir, "glmm_random_effect_predictions.csv"),
+    row.names = FALSE,
+    quote = TRUE
+)
+
+png(
+    file.path(output_dir, "glmm_random_intercept_histogram.png"),
+    width = 900,
+    height = 600
+)
+hist(
+    random_effect_predictions$random_intercept,
+    breaks = "FD",
+    col = "steelblue",
+    border = "white",
+    xlab = "Predicted random intercept",
+    main = "Predicted Random Intercepts by Subject"
+)
+dev.off()
+
+png(
+    file.path(output_dir, "glmm_random_slope_histogram.png"),
+    width = 900,
+    height = 600
+)
+hist(
+    random_effect_predictions$random_slope,
+    breaks = "FD",
+    col = "darkorange",
+    border = "white",
+    xlab = "Predicted random slope for visitc",
+    main = "Predicted Random Slopes by Subject"
+)
+dev.off()
