@@ -257,3 +257,116 @@ hist(
     main = "Predicted Random Slopes by Subject"
 )
 dev.off()
+
+set.seed(767)
+subject_profiles <- dat_model[
+    !duplicated(dat_model$id),
+    c("id", "TG", "age_rz", "gender", "ethnic")
+]
+subject_profiles <- subject_profiles[order(subject_profiles$TG, subject_profiles$id), ]
+selected_subject_ids <- unlist(
+    lapply(split(subject_profiles$id, subject_profiles$TG), function(subject_ids) {
+        sample(subject_ids, size = 4)
+    }),
+    use.names = FALSE
+)
+selected_subject_profiles <- subject_profiles[
+    subject_profiles$id %in% selected_subject_ids,
+]
+selected_subject_profiles <- selected_subject_profiles[
+    order(selected_subject_profiles$TG, selected_subject_profiles$id),
+]
+
+selected_subject_probabilities <- do.call(
+    rbind,
+    lapply(seq_len(nrow(selected_subject_profiles)), function(row_index) {
+        subject_profile <- selected_subject_profiles[row_index, ]
+        data.frame(
+            id = subject_profile$id,
+            TG = subject_profile$TG,
+            age_rz = subject_profile$age_rz,
+            gender = subject_profile$gender,
+            ethnic = subject_profile$ethnic,
+            visitc = sort(unique(dat_model$visitc))
+        )
+    })
+)
+selected_subject_probabilities$id <- factor(
+    selected_subject_probabilities$id,
+    levels = levels(dat_model$id)
+)
+selected_subject_probabilities$TG <- factor(
+    selected_subject_probabilities$TG,
+    levels = levels(dat_model$TG)
+)
+selected_subject_probabilities$gender <- factor(
+    selected_subject_probabilities$gender,
+    levels = levels(dat_model$gender)
+)
+selected_subject_probabilities$ethnic <- factor(
+    selected_subject_probabilities$ethnic,
+    levels = levels(dat_model$ethnic)
+)
+selected_subject_probabilities$visitc_f <- factor(
+    selected_subject_probabilities$visitc,
+    levels = levels(dat_model$visitc_f)
+)
+selected_subject_probabilities$predicted_probability <- predict(
+    fit_glmm,
+    newdata = selected_subject_probabilities,
+    type = "response"
+)
+
+write.csv(
+    selected_subject_probabilities[
+        c("id", "TG", "visitc", "predicted_probability")
+    ],
+    file.path(output_dir, "glmm_selected_subject_probabilities.csv"),
+    row.names = FALSE,
+    quote = TRUE
+)
+
+plot_tg <- levels(droplevels(selected_subject_probabilities$TG))
+plot_colors <- c("steelblue", "darkorange", "forestgreen", "purple")
+png(
+    file.path(output_dir, "glmm_selected_subject_probabilities.png"),
+    width = 900,
+    height = 900
+)
+old_par <- par(mfrow = c(length(plot_tg), 1), mar = c(4, 4, 3, 1))
+for (tg_value in plot_tg) {
+    tg_probabilities <- selected_subject_probabilities[
+        selected_subject_probabilities$TG == tg_value,
+    ]
+    tg_subjects <- unique(tg_probabilities$id)
+    plot(
+        NA,
+        xlim = range(tg_probabilities$visitc),
+        ylim = c(0, 1),
+        xlab = "Visit",
+        ylab = "Predicted probability",
+        main = paste("Subject-Specific Predicted Probabilities:", tg_value)
+    )
+    for (subject_index in seq_along(tg_subjects)) {
+        subject_probabilities <- tg_probabilities[
+            tg_probabilities$id == tg_subjects[subject_index],
+        ]
+        lines(
+            subject_probabilities$visitc,
+            subject_probabilities$predicted_probability,
+            type = "b",
+            pch = 19,
+            col = plot_colors[subject_index]
+        )
+    }
+    legend(
+        "topright",
+        legend = paste("id", tg_subjects),
+        col = plot_colors[seq_along(tg_subjects)],
+        lty = 1,
+        pch = 19,
+        bty = "n"
+    )
+}
+par(old_par)
+dev.off()
