@@ -89,12 +89,13 @@ fit_glmm <- lme4::glmer(
 )
 
 coef_table <- as.data.frame(summary(fit_glmm)$coefficients)
+p_values <- coef_table[["Pr(>|z|)"]]
 parameter_estimates <- data.frame(
     parameter = row.names(coef_table),
     estimate = coef_table[["Estimate"]],
     std_error = coef_table[["Std. Error"]],
     statistic = coef_table[["z value"]],
-    p_value = coef_table[["Pr(>|z|)"]],
+    p_value = ifelse(p_values < 0.001, "<0.001", as.character(p_values)),
     row.names = NULL,
     check.names = FALSE
 )
