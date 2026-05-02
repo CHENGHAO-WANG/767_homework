@@ -1,5 +1,5 @@
-"model","random_effects","df","AIC","delta_AIC"
-"random_intercept_and_slope","(visitc | id)",56,4858.16770495953,0
-"random_intercept_only","(1 | id)",54,4983.92127444427,125.753569484741
-"random_slope_only","(0 + visitc | id)",54,5642.3435740718,784.175869112272
-"fixed_effects_only","none",53,7612.25018896619,2754.08248400666
+"model","random_effects","df","AIC"
+"random_intercept_and_slope","(visitc | id)",56,4858.16770495953
+"random_intercept_only","(1 | id)",54,4983.92127444427
+"random_slope_only","(0 + visitc | id)",54,5642.3435740718
+"fixed_effects_only","none",53,7612.25018896619

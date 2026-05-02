@@ -147,7 +147,6 @@ aic_comparison <- data.frame(
     row.names = NULL
 )
 aic_comparison <- aic_comparison[order(aic_comparison$AIC), ]
-aic_comparison$delta_AIC <- aic_comparison$AIC - min(aic_comparison$AIC)
 
 write.csv(
     aic_comparison,
