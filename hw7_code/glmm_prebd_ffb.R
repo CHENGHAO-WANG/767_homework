@@ -187,6 +187,32 @@ write.csv(
     quote = TRUE
 )
 
+gee_parameter_estimates <- read.csv(
+    file.path(
+        project_dir,
+        "hw6_code",
+        "output",
+        "gee_parameter_estimates.csv"
+    )
+)
+glmm_estimates <- setNames(
+    parameter_estimates$estimate,
+    parameter_estimates$parameter
+)
+estimate_comparison <- data.frame(
+    parameter = gee_parameter_estimates$parameter,
+    GEE_estimate = gee_parameter_estimates$independence,
+    GLMM_estimate = as.numeric(glmm_estimates[gee_parameter_estimates$parameter]),
+    row.names = NULL
+)
+
+write.csv(
+    estimate_comparison,
+    file.path(output_dir, "glmm_gee_independence_estimate_comparison.csv"),
+    row.names = FALSE,
+    quote = TRUE
+)
+
 random_effect_predictions <- lme4::ranef(fit_glmm)$id
 random_effect_predictions <- data.frame(
     id = row.names(random_effect_predictions),
