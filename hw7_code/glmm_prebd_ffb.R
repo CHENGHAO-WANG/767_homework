@@ -77,8 +77,17 @@ dat_model$ethnic <- relevel(factor(dat_model$ethnic), ref = "white")
 dat_model$visitc <- as.numeric(dat_model$visitc)
 dat_model$visitc_f <- factor(dat_model$visitc)
 
-glmm_formula <- PreBD_FFB_binary ~
-    TG * visitc_f + age_rz + gender + ethnic + (visitc | id)
+fixed_effects_formula <- PreBD_FFB_binary ~
+    TG * visitc_f + age_rz + gender + ethnic
+glmm_formula <- update(fixed_effects_formula, . ~ . + (visitc | id))
+glmm_random_slope_formula <- update(
+    fixed_effects_formula,
+    . ~ . + (0 + visitc | id)
+)
+glmm_random_intercept_formula <- update(
+    fixed_effects_formula,
+    . ~ . + (1 | id)
+)
 
 fit_glmm <- lme4::glmer(
     formula = glmm_formula,
@@ -86,6 +95,65 @@ fit_glmm <- lme4::glmer(
     family = binomial(link = "logit"),
     nAGQ = 0,
     control = lme4::glmerControl(optimizer = "bobyqa")
+)
+
+fit_glmm_random_slope <- lme4::glmer(
+    formula = glmm_random_slope_formula,
+    data = dat_model,
+    family = binomial(link = "logit"),
+    nAGQ = 0,
+    control = lme4::glmerControl(optimizer = "bobyqa")
+)
+
+fit_glmm_random_intercept <- lme4::glmer(
+    formula = glmm_random_intercept_formula,
+    data = dat_model,
+    family = binomial(link = "logit"),
+    nAGQ = 0,
+    control = lme4::glmerControl(optimizer = "bobyqa")
+)
+
+fit_fixed_effects <- glm(
+    formula = fixed_effects_formula,
+    data = dat_model,
+    family = binomial(link = "logit")
+)
+
+aic_comparison <- data.frame(
+    model = c(
+        "random_intercept_and_slope",
+        "random_slope_only",
+        "random_intercept_only",
+        "fixed_effects_only"
+    ),
+    random_effects = c(
+        "(visitc | id)",
+        "(0 + visitc | id)",
+        "(1 | id)",
+        "none"
+    ),
+    df = c(
+        attr(logLik(fit_glmm), "df"),
+        attr(logLik(fit_glmm_random_slope), "df"),
+        attr(logLik(fit_glmm_random_intercept), "df"),
+        attr(logLik(fit_fixed_effects), "df")
+    ),
+    AIC = c(
+        AIC(fit_glmm),
+        AIC(fit_glmm_random_slope),
+        AIC(fit_glmm_random_intercept),
+        AIC(fit_fixed_effects)
+    ),
+    row.names = NULL
+)
+aic_comparison <- aic_comparison[order(aic_comparison$AIC), ]
+aic_comparison$delta_AIC <- aic_comparison$AIC - min(aic_comparison$AIC)
+
+write.csv(
+    aic_comparison,
+    file.path(output_dir, "glmm_aic_comparison.csv"),
+    row.names = FALSE,
+    quote = TRUE
 )
 
 coef_table <- as.data.frame(summary(fit_glmm)$coefficients)
