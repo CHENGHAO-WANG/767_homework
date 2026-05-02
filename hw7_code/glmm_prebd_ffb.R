@@ -1,31 +1,13 @@
-if (!requireNamespace("lme4", quietly = TRUE)) {
-    stop(
-        "Package 'lme4' is required for GLMM models. ",
-        "Install it with install.packages('lme4') and rerun this script.",
-        call. = FALSE
-    )
-}
-if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    stop(
-        "Package 'ggplot2' is required for plotting. ",
-        "Install it with install.packages('ggplot2') and rerun this script.",
-        call. = FALSE
-    )
-}
+library(lme4)
+library(ggplot2)
 
-script_path <- normalizePath(
-    sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)[1]),
-    winslash = "/",
-    mustWork = TRUE
-)
-script_dir <- dirname(script_path)
-project_dir <- dirname(script_dir)
+setwd("./hw7_code")
 
-output_dir <- file.path(script_dir, "output")
+output_dir <- "output"
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 dat <- read.csv(
-    file.path(project_dir, "data", "data_tidy.csv"),
+    "../data/data_tidy.csv",
     na.strings = c("", "NA")
 )
 
@@ -232,7 +214,7 @@ write.csv(
 
 gee_parameter_estimates <- read.csv(
     file.path(
-        project_dir,
+        "..",
         "hw6_code",
         "output",
         "gee_parameter_estimates.csv"

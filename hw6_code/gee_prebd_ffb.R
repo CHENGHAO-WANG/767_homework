@@ -1,22 +1,9 @@
 library(stats)
+library(geepack)
+library(ggplot2)
 
 # setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 setwd("./hw6_code")
-
-if (!requireNamespace("geepack", quietly = TRUE)) {
-    stop(
-        "Package 'geepack' is required for GEE models. ",
-        "Install it with install.packages('geepack') and rerun this script.",
-        call. = FALSE
-    )
-}
-if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    stop(
-        "Package 'ggplot2' is required for plotting. ",
-        "Install it with install.packages('ggplot2') and rerun this script.",
-        call. = FALSE
-    )
-}
 
 output_dir <- "output"
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
